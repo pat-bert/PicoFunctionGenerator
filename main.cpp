@@ -14,9 +14,11 @@
 #include "hardware/irq.h"
 #include "hardware/timer.h"
 
+#include "lvgl/lvgl.h"
+#include "oled-display/lcd.h"
+
 #include "mcp4725.hpp"
 #include "waveform_data.hpp"
-#include "oled-display/lcd.h"
 
 #include <cmath>
 #include <variant>
@@ -48,6 +50,8 @@ int main()
     sleep_ms(5000); // wait for USB serial to be ready
 
     printf("Raspberry Pico Function Generator\n");
+
+    lv_init();
 
     MCP4725_PICO dacArray[2]{};
     if (!dacArray[0].begin(MCP4725_PICO::MCP4725A0_Addr_A00, i2c0, i2cSpeedKHz, SDA0, SCL0, 50000))

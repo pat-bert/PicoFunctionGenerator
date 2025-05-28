@@ -35,11 +35,12 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pico_function_generator
+add_executable(${PROJECT_NAME}
     oled-display/font.c
     oled-display/font.h
     oled-display/lcd.c
     oled-display/lcd.h
+    lv_conf.h
     main.cpp
     mcp4725_Sinewave_Data.cpp
     mcp4725_Sinewave_Data.hpp
@@ -48,15 +49,22 @@ add_executable(pico_function_generator
     waveform_data.hpp
 )
 
+add_subdirectory(lvgl)
+
+# Include LVGL headers
+include_directories(${CMAKE_SOURCE_DIR}/lvgl)
+
+# Link LVGL to your target
+target_link_libraries(${PROJECT_NAME} lvgl)
 
 # pull in common dependencies and additional pwm hardware support
-target_link_libraries(pico_function_generator  pico_stdlib hardware_pwm hardware_i2c hardware_dma)
+target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_pwm hardware_i2c hardware_dma)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(pico_function_generator 1)
-pico_enable_stdio_uart(pico_function_generator 0)
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
+pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
 # create map/bin/hex file etc.
-pico_add_extra_outputs(pico_function_generator)
+pico_add_extra_outputs(${PROJECT_NAME})
 
 # add url via pico_set_program_url

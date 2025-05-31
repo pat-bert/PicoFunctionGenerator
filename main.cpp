@@ -16,7 +16,7 @@
 #include "hardware/timer.h"
 
 #include "lvgl/lvgl.h"
-#include "sh1106.h"
+#include "sh1106.hpp"
 
 #include "mcp4725.hpp"
 #include "waveform_data.hpp"
@@ -84,24 +84,26 @@ void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
     // Skip the first 8 bytes of the buffer, which are used for metadata
     px_map += 8;
 
-    uint8_t bufConverted[SH1106_BUF_SIZE];
+    auto *sh1106 = static_cast<SH1106::SH1106_128x64 *>(lv_display_get_user_data(display));
+
+    uint16_t buffer_size = SH1106::SH1106_128x64::get_buffer_size();
+    uint8_t buffer_converted[buffer_size];
 
     lv_draw_sw_i1_convert_to_vtiled_pages_first(
         px_map,
-        SH1106_BUF_SIZE,
-        SH1106_WIDTH,
-        SH1106_HEIGHT,
-        bufConverted,
-        SH1106_BUF_SIZE,
+        buffer_size,
+        sh1106->get_width(),
+        sh1106->get_height(),
+        buffer_converted,
+        buffer_size,
         true);
 
-    sh1106_write_area(
-        static_cast<sh1106_t *>(lv_display_get_user_data(display)),
+    sh1106->write_area(
         static_cast<uint8_t>(area->x1),
         static_cast<uint8_t>(area->x2),
         static_cast<uint8_t>(area->y1),
         static_cast<uint8_t>(area->y2),
-        bufConverted);
+        buffer_converted);
 
     lv_display_flush_ready(display);
 }
@@ -117,19 +119,20 @@ static void rounder_cb(lv_event_t *e)
 
 void core1_function()
 {
-    sh1106_t sh1106{};
-    sh1106_init(&sh1106, i2c1, SH1106_ADDR, 2);
-    sh1106_clear_display(&sh1106);
-    sh1106_inverted(&sh1106, false);
-    sh1106_flipped(&sh1106, true);
-    sh1106_reverse_cols(&sh1106, true);
+    constexpr uint8_t column_offset{2};
+    SH1106::SH1106_128x64 sh1106{i2c1, SH1106::I2C_ADDR_PRIMARY, column_offset};
+    sh1106.init();
+    sh1106.clear_display();
+    sh1106.inverted(false);
+    sh1106.flipped(true);
+    sh1106.reverse_cols(true);
     sleep_ms(5000);
 
-    static uint8_t buf1[SH1106_BUF_SIZE + 8];
+    static uint8_t buf1[SH1106::SH1106_128x64::get_buffer_size() + 8];
 
     lv_init();
 
-    lv_display_t *display = lv_display_create(SH1106_WIDTH, SH1106_HEIGHT);
+    lv_display_t *display = lv_display_create(sh1106.get_width(), sh1106.get_height());
     lv_theme_t *theme = lv_theme_mono_init(
         display,        // Active display
         true,           // Enable dark mode

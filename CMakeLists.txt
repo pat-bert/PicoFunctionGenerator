@@ -42,8 +42,7 @@ add_executable(${PROJECT_NAME}
     mcp4725_Sinewave_Data.hpp
     mcp4725.cpp
     mcp4725.hpp
-    sh1106.c
-    sh1106.h
+    sh1106.hpp
     waveform_data.hpp
 )
 

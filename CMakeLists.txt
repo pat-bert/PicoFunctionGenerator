@@ -36,23 +36,21 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(${PROJECT_NAME}
-    oled-display/font.c
-    oled-display/font.h
-    oled-display/lcd.c
-    oled-display/lcd.h
     lv_conf.h
     main.cpp
     mcp4725_Sinewave_Data.cpp
     mcp4725_Sinewave_Data.hpp
     mcp4725.cpp
     mcp4725.hpp
+    sh1106.c
+    sh1106.h
     waveform_data.hpp
 )
 
 add_subdirectory(lvgl)
 
 # Include LVGL headers
-include_directories(${CMAKE_SOURCE_DIR}/lvgl)
+include_directories(${CMAKE_SOURCE_DIR}/lvgl ${CMAKE_SOURCE_DIR})
 
 # Link LVGL to your target
 target_link_libraries(${PROJECT_NAME} lvgl)
@@ -66,5 +64,3 @@ pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${PROJECT_NAME})
-
-# add url via pico_set_program_url

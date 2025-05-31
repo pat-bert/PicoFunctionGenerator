@@ -14,9 +14,6 @@
 
 namespace SH1106
 {
-    constexpr uint8_t I2C_ADDR_PRIMARY{0x3C};
-    constexpr uint8_t I2C_ADDR_SECONDARY{0x3D};
-
     constexpr uint8_t MAX_WIDTH{132};
     constexpr uint8_t MAX_HEIGHT{64};
 
@@ -24,10 +21,16 @@ namespace SH1106
     class SH1106
     {
     public:
+        enum class I2CAddr : uint8_t
+        {
+            PRIMARY = 0x3C,
+            SECONDARY = 0x3D
+        };
+
         static_assert((Height > 0) && (Height <= MAX_HEIGHT));
         static_assert((Width > 0) && (Width <= MAX_WIDTH));
 
-        SH1106(I2C::I2CInterface *interface, uint8_t addr, uint8_t col_offset) : m_interface(interface),
+        SH1106(I2C::I2CInterface *interface, I2CAddr addr, uint8_t col_offset) : m_interface(interface),
                                                                                  m_addr(addr),
                                                                                  m_col_offset(col_offset),
                                                                                  m_inverted(false),
@@ -237,7 +240,7 @@ namespace SH1106
             {
                 set_page_addr(page);
                 col_start(0);
-                m_interface->write(m_addr, m_page_buffer, sizeof(m_page_buffer));
+                m_interface->write(static_cast<uint8_t>(m_addr), m_page_buffer, sizeof(m_page_buffer));
             }
         }
 
@@ -427,7 +430,7 @@ namespace SH1106
         {
             m_cmd_buffer[0] = 0x00;
             m_cmd_buffer[1] = reg;
-            m_interface->write(m_addr, m_cmd_buffer, 2);
+            m_interface->write(static_cast<uint8_t>(m_addr), m_cmd_buffer, 2);
         }
 
         void write_2byte_cmd(uint8_t reg, uint8_t data)
@@ -437,7 +440,7 @@ namespace SH1106
             m_cmd_buffer[1] = reg;
             m_cmd_buffer[2] = 0x00; // Continuation bit not set, Data bit not set
             m_cmd_buffer[3] = data;
-            m_interface->write(m_addr, m_cmd_buffer, 4);
+            m_interface->write(static_cast<uint8_t>(m_addr), m_cmd_buffer, 4);
         }
 
         // Send data
@@ -450,12 +453,12 @@ namespace SH1106
 
             m_page_buffer[0] = 0x40; // Continuation bit not set, Data bit set
             memcpy(&m_page_buffer[1], buffer, size);
-            return m_interface->write(m_addr, m_page_buffer, size + 1);
+            return m_interface->write(static_cast<uint8_t>(m_addr), m_page_buffer, size + 1);
         }
 
     private:
         I2C::I2CInterface *m_interface;
-        uint8_t m_addr;
+        I2CAddr m_addr;
         uint8_t m_col_offset;
         bool m_inverted;
         bool m_flipped;

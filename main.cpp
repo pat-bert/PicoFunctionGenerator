@@ -125,7 +125,7 @@ void core1_function()
     I2C::I2CPico i2cDisplay{i2c1};
 
     constexpr uint8_t column_offset{2};
-    DisplayDriverType displayDriver{&i2cDisplay, SH1106::I2C_ADDR_PRIMARY, column_offset};
+    DisplayDriverType displayDriver{&i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};
     displayDriver.init();
     displayDriver.clear_display();
     displayDriver.inverted(false);
@@ -133,7 +133,7 @@ void core1_function()
     displayDriver.reverse_cols(true);
     sleep_ms(5000);
 
-    static uint8_t buf1[SH1106::SH1106_128x64::get_buffer_size() + 8];
+    static uint8_t buf1[DisplayDriverType::get_buffer_size() + 8];
 
     lv_init();
 

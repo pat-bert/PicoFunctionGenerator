@@ -17,6 +17,7 @@
 
 #include "lvgl/lvgl.h"
 #include "sh1106.hpp"
+#include "i2c_pico.hpp"
 
 #include "mcp4725.hpp"
 #include "waveform_data.hpp"
@@ -24,6 +25,8 @@
 #include <cmath>
 #include <variant>
 #include <cstring>
+
+using DisplayDriverType = SH1106::SH1106_128x64;
 
 template <class... Ts>
 struct overloaded : Ts...
@@ -84,21 +87,21 @@ void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
     // Skip the first 8 bytes of the buffer, which are used for metadata
     px_map += 8;
 
-    auto *sh1106 = static_cast<SH1106::SH1106_128x64 *>(lv_display_get_user_data(display));
+    auto *displayDriver = static_cast<DisplayDriverType *>(lv_display_get_user_data(display));
 
-    uint16_t buffer_size = SH1106::SH1106_128x64::get_buffer_size();
+    uint16_t buffer_size = DisplayDriverType::get_buffer_size();
     uint8_t buffer_converted[buffer_size];
 
     lv_draw_sw_i1_convert_to_vtiled_pages_first(
         px_map,
         buffer_size,
-        sh1106->get_width(),
-        sh1106->get_height(),
+        displayDriver->get_width(),
+        displayDriver->get_height(),
         buffer_converted,
         buffer_size,
         true);
 
-    sh1106->write_area(
+    displayDriver->write_area(
         static_cast<uint8_t>(area->x1),
         static_cast<uint8_t>(area->x2),
         static_cast<uint8_t>(area->y1),
@@ -119,20 +122,22 @@ static void rounder_cb(lv_event_t *e)
 
 void core1_function()
 {
+    I2C::I2CPico i2cDisplay{i2c1};
+
     constexpr uint8_t column_offset{2};
-    SH1106::SH1106_128x64 sh1106{i2c1, SH1106::I2C_ADDR_PRIMARY, column_offset};
-    sh1106.init();
-    sh1106.clear_display();
-    sh1106.inverted(false);
-    sh1106.flipped(true);
-    sh1106.reverse_cols(true);
+    DisplayDriverType displayDriver{&i2cDisplay, SH1106::I2C_ADDR_PRIMARY, column_offset};
+    displayDriver.init();
+    displayDriver.clear_display();
+    displayDriver.inverted(false);
+    displayDriver.flipped(true);
+    displayDriver.reverse_cols(true);
     sleep_ms(5000);
 
     static uint8_t buf1[SH1106::SH1106_128x64::get_buffer_size() + 8];
 
     lv_init();
 
-    lv_display_t *display = lv_display_create(sh1106.get_width(), sh1106.get_height());
+    lv_display_t *display = lv_display_create(displayDriver.get_width(), displayDriver.get_height());
     lv_theme_t *theme = lv_theme_mono_init(
         display,        // Active display
         true,           // Enable dark mode
@@ -141,7 +146,7 @@ void core1_function()
 
     lv_display_set_theme(display, theme);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_I1);
-    lv_display_set_user_data(display, static_cast<void *>(&sh1106));
+    lv_display_set_user_data(display, static_cast<void *>(&displayDriver));
 
     lv_display_set_buffers(display, buf1, nullptr, sizeof(buf1), LV_DISPLAY_RENDER_MODE_FULL);
     lv_display_set_flush_cb(display, flush_cb);

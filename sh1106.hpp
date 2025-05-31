@@ -8,7 +8,7 @@
 #ifndef SH1106_HPP_INCLUDED
 #define SH1106_HPP_INCLUDED
 
-#include "hardware/i2c.h"
+#include "i2c_interface.hpp"
 
 #include <cstring>
 
@@ -27,12 +27,12 @@ namespace SH1106
         static_assert((Height > 0) && (Height <= MAX_HEIGHT));
         static_assert((Width > 0) && (Width <= MAX_WIDTH));
 
-        SH1106(i2c_inst_t *port, uint8_t addr, uint8_t col_offset) : m_port(port),
-                                                                     m_addr(addr),
-                                                                     m_col_offset(col_offset),
-                                                                     m_inverted(false),
-                                                                     m_flipped(false),
-                                                                     m_mirrored(false)
+        SH1106(I2C::I2CInterface *interface, uint8_t addr, uint8_t col_offset) : m_interface(interface),
+                                                                                 m_addr(addr),
+                                                                                 m_col_offset(col_offset),
+                                                                                 m_inverted(false),
+                                                                                 m_flipped(false),
+                                                                                 m_mirrored(false)
         {
             memset(m_page_buffer, 0, sizeof(m_page_buffer));
             memset(m_cmd_buffer, 0, sizeof(m_cmd_buffer));
@@ -237,7 +237,7 @@ namespace SH1106
             {
                 set_page_addr(page);
                 col_start(0);
-                i2c_write_blocking(m_port, m_addr, m_page_buffer, sizeof(m_page_buffer), false);
+                m_interface->write(m_addr, m_page_buffer, sizeof(m_page_buffer));
             }
         }
 
@@ -427,7 +427,7 @@ namespace SH1106
         {
             m_cmd_buffer[0] = 0x00;
             m_cmd_buffer[1] = reg;
-            i2c_write_blocking(m_port, m_addr, m_cmd_buffer, 2, false);
+            m_interface->write(m_addr, m_cmd_buffer, 2);
         }
 
         void write_2byte_cmd(uint8_t reg, uint8_t data)
@@ -437,7 +437,7 @@ namespace SH1106
             m_cmd_buffer[1] = reg;
             m_cmd_buffer[2] = 0x00; // Continuation bit not set, Data bit not set
             m_cmd_buffer[3] = data;
-            i2c_write_blocking(m_port, m_addr, m_cmd_buffer, 4, false);
+            m_interface->write(m_addr, m_cmd_buffer, 4);
         }
 
         // Send data
@@ -450,11 +450,11 @@ namespace SH1106
 
             m_page_buffer[0] = 0x40; // Continuation bit not set, Data bit set
             memcpy(&m_page_buffer[1], buffer, size);
-            return i2c_write_blocking(m_port, m_addr, m_page_buffer, size + 1, false);
+            return m_interface->write(m_addr, m_page_buffer, size + 1);
         }
 
     private:
-        i2c_inst_t *m_port;
+        I2C::I2CInterface *m_interface;
         uint8_t m_addr;
         uint8_t m_col_offset;
         bool m_inverted;

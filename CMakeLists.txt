@@ -36,6 +36,8 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(${PROJECT_NAME}
+    i2c_interface.hpp
+    i2c_pico.hpp
     lv_conf.h
     main.cpp
     mcp4725_Sinewave_Data.cpp
@@ -49,7 +51,7 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(lvgl)
 
 # Include LVGL headers
-include_directories(${CMAKE_SOURCE_DIR}/lvgl ${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/lvgl)
 
 # Link LVGL to your target
 target_link_libraries(${PROJECT_NAME} lvgl)

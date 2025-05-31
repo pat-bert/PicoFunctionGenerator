@@ -56,7 +56,13 @@ include_directories(${CMAKE_SOURCE_DIR}/lvgl ${CMAKE_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} lvgl)
 
 # pull in common dependencies and additional pwm hardware support
-target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_pwm hardware_i2c hardware_dma)
+target_link_libraries(${PROJECT_NAME} 
+    pico_stdlib 
+    pico_multicore 
+    hardware_pwm 
+    hardware_i2c 
+    hardware_dma
+)
 
 # enable usb output, disable uart output
 pico_enable_stdio_usb(${PROJECT_NAME} 1)

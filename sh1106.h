@@ -15,41 +15,15 @@ extern "C"
 
 #include "hardware/i2c.h"
 
-/* vvv I2C config vvv */
-#ifndef I2C_SDA
-#define I2C_SDA 18
-#endif
+#define SH1106_ADDR        (0x3C)
 
-#ifndef I2C_SCL
-#define I2C_SCL 19
-#endif
-
-#ifndef I2C_PORT
-#define I2C_PORT		i2c1
-#endif
-
-#ifndef ADDR
-#define ADDR        (0x3C)
-#endif
-/* ^^^ I2C config ^^^ */
-
-// sh1106 maximum height in pixels
-#ifndef SH1106_HEIGHT
 #define SH1106_HEIGHT          64
-#endif
-
-// sh1106 maximum width in pixels
-#ifndef SH1106_WIDTH
 #define SH1106_WIDTH           128
-#endif
 
 #define SSH1106_MAX_WIDTH       132
 #define SSH1106_MAX_HEIGHT      64
 
-// sh1106 maximum width in pixels
-#ifndef SH1106_BUF_SIZE
-#define SH1106_BUF_SIZE           SH1106_HEIGHT * SH1106_WIDTH / 8
-#endif
+#define SH1106_BUF_SIZE         SH1106_HEIGHT * SH1106_WIDTH / 8
 
 // Enumeration for screen colors
 typedef enum {

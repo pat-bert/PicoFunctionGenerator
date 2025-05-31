@@ -1,6 +1,3 @@
-[submodule "oled-display"]
-	path = oled-display
-	url = https://github.com/pat-bert/oled-display.git
 [submodule "lvgl"]
 	path = lvgl
 	url = https://github.com/lvgl/lvgl.git

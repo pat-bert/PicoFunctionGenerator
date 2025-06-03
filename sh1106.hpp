@@ -8,8 +8,6 @@
 #ifndef SH1106_HPP_INCLUDED
 #define SH1106_HPP_INCLUDED
 
-#include "i2c_interface.hpp"
-
 #include <cstring>
 
 namespace SH1106
@@ -17,7 +15,7 @@ namespace SH1106
     constexpr uint8_t MAX_WIDTH{132};
     constexpr uint8_t MAX_HEIGHT{64};
 
-    template <uint8_t Width, uint8_t Height>
+    template <uint8_t Width, uint8_t Height, typename I2CInterface>
     class SH1106
     {
     public:
@@ -30,12 +28,12 @@ namespace SH1106
         static_assert((Height > 0) && (Height <= MAX_HEIGHT));
         static_assert((Width > 0) && (Width <= MAX_WIDTH));
 
-        SH1106(I2C::I2CInterface *interface, I2CAddr addr, uint8_t col_offset) : m_interface(interface),
-                                                                                 m_addr(addr),
-                                                                                 m_col_offset(col_offset),
-                                                                                 m_inverted(false),
-                                                                                 m_flipped(false),
-                                                                                 m_mirrored(false)
+        SH1106(I2CInterface *interface, I2CAddr addr, uint8_t col_offset) : m_interface(interface),
+                                                                            m_addr(addr),
+                                                                            m_col_offset(col_offset),
+                                                                            m_inverted(false),
+                                                                            m_flipped(false),
+                                                                            m_mirrored(false)
         {
             memset(m_page_buffer, 0, sizeof(m_page_buffer));
             memset(m_cmd_buffer, 0, sizeof(m_cmd_buffer));
@@ -457,7 +455,7 @@ namespace SH1106
         }
 
     private:
-        I2C::I2CInterface *m_interface;
+        I2CInterface *m_interface;
         I2CAddr m_addr;
         uint8_t m_col_offset;
         bool m_inverted;
@@ -491,7 +489,8 @@ namespace SH1106
      *          Non-Operation Command.
      */
 
-    using SH1106_128x64 = SH1106<128, 64>; // 128x64 pixel display
+    template <typename I2CInterface>
+    using SH1106_128x64 = SH1106<128, 64, I2CInterface>; // 128x64 pixel display
 }
 
 #endif

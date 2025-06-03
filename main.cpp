@@ -17,7 +17,7 @@
 
 #include "lvgl/lvgl.h"
 #include "sh1106.hpp"
-#include "i2c_pico.hpp"
+#include "i2c/i2c_pico.hpp"
 
 #include "mcp4725.hpp"
 #include "waveform_data.hpp"
@@ -26,7 +26,7 @@
 #include <variant>
 #include <cstring>
 
-using DisplayDriverType = SH1106::SH1106_128x64;
+using DisplayDriverType = SH1106::SH1106_128x64<I2C::I2CPicoHw>;
 
 template <class... Ts>
 struct overloaded : Ts...
@@ -122,7 +122,7 @@ static void rounder_cb(lv_event_t *e)
 
 void core1_function()
 {
-    I2C::I2CPico i2cDisplay{i2c1};
+    I2C::I2CPicoHw i2cDisplay{i2c1};
 
     constexpr uint8_t column_offset{2};
     DisplayDriverType displayDriver{&i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};

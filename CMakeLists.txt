@@ -36,8 +36,10 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(${PROJECT_NAME}
-    i2c_interface.hpp
-    i2c_pico.hpp
+    i2c/i2c_interface.hpp
+    i2c/i2c_pico.hpp
+    i2c/pio_i2c.c
+    i2c/pio_i2c.h
     lv_conf.h
     main.cpp
     mcp4725_Sinewave_Data.cpp
@@ -56,13 +58,16 @@ include_directories(${CMAKE_SOURCE_DIR}/lvgl)
 # Link LVGL to your target
 target_link_libraries(${PROJECT_NAME} lvgl)
 
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/i2c/i2c.pio)
+
 # pull in common dependencies and additional pwm hardware support
-target_link_libraries(${PROJECT_NAME} 
-    pico_stdlib 
-    pico_multicore 
-    hardware_pwm 
-    hardware_i2c 
+target_link_libraries(${PROJECT_NAME}
+    pico_stdlib
+    pico_multicore
     hardware_dma
+    hardware_i2c
+    hardware_pio
+    hardware_pwm
 )
 
 # enable usb output, disable uart output

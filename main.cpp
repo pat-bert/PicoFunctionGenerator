@@ -183,8 +183,7 @@ int main()
 
     DacDriverType dacArray[]{
         DacDriverType{&i2cDac0, DacDriverType::I2CAddr::VariantA0_PinA00},
-        // DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}
-    };
+        DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}};
 
     for (auto &dac : dacArray)
     {
@@ -209,8 +208,8 @@ int main()
     scliceArray[0] = pwm_gpio_to_slice_num(pwm0);
     scliceArray[1] = pwm_gpio_to_slice_num(pwm1);
 
-    ChannelData waveformData0{TriangleData{true, 0U, 100U, 2000U}};
-    // ChannelData waveformData1{TriangleData{true, 1U, 100U, 2000U}};
+    ChannelData waveformData0{SawtoothData{true, 0U, 100U, 2000U, true}};
+    ChannelData waveformData1{TriangleData{true, 1U, 100U, 2000U}};
 
     const overloaded setupVisitor{
         [&scliceArray](const RectangleData &arg)
@@ -235,7 +234,7 @@ int main()
 
             dac.setInputCode(arg.m_amplitude, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
         },
-        [&dacArray](const SawtoothData &arg)
+        [&dacArray](SawtoothData &arg)
         {
             printf("Executing saw tooth: CH%d, %d Hz %d Ampl, %s\n", arg.m_channel, arg.m_frequency, arg.m_amplitude, arg.m_inc ? "inc" : "dec");
             auto &dac = dacArray[arg.m_channel];
@@ -255,26 +254,21 @@ int main()
 
             if (arg.m_inc)
             {
-                while (true)
-                {
-                    for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
-                    {
-                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
-                    }
-                }
+                dac.setInputCode(arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
             }
             else
             {
-                while (true)
-                {
-                    for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
-                    {
-                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
-                    }
-                }
+                dac.setInputCode(arg.m_amplitude - arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
+            }
+
+            // Update counter for next step
+            arg.m_counter += step;
+            if (arg.m_counter >= arg.m_amplitude)
+            {
+                arg.m_counter = 0;
             }
         },
-        [&dacArray](const TriangleData &arg)
+        [&dacArray](TriangleData &arg)
         {
             printf("Executing triangle: CH%d, %d Hz %d Ampl\n", arg.m_channel, arg.m_frequency, arg.m_amplitude);
             auto &dac = dacArray[arg.m_channel];
@@ -292,15 +286,23 @@ int main()
             int16_t stepCount = i2cSpeedKHz * 1000 / (35 * arg.m_frequency);
             int16_t step = 2 * arg.m_amplitude / (stepCount - 1);
 
-            while (true)
+            dac.setInputCode(arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
+            if (arg.m_inc)
             {
-                for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
+                arg.m_counter += step;
+                if (arg.m_counter >= arg.m_amplitude)
                 {
-                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
+                    arg.m_inc = false;
+                    arg.m_counter = arg.m_amplitude;
                 }
-                for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
+            }
+            else
+            {
+                arg.m_counter -= step;
+                if (arg.m_counter <= 0)
                 {
-                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
+                    arg.m_inc = true;
+                    arg.m_counter = 0;
                 }
             }
         },
@@ -309,12 +311,10 @@ int main()
             printf("Executing sine\n");
         }};
 
-    std::visit(setupVisitor, waveformData0);
-    // std::visit(setupVisitor, waveformData1);
-
     while (true)
     {
-        sleep_ms(1000);
+        std::visit(setupVisitor, waveformData0);
+        std::visit(setupVisitor, waveformData1);
     }
 }
 

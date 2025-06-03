@@ -198,7 +198,7 @@ int main()
     scliceArray[0] = pwm_gpio_to_slice_num(PWM0);
     scliceArray[1] = pwm_gpio_to_slice_num(PWM1);
 
-    ChannelData waveformData0{RectangleData{true, 0U, 250U, 30U}};
+    ChannelData waveformData0{TriangleData{true, 0U, 100U, 2000U}};
     // ChannelData waveformData1{TriangleData{true, 1U, 100U, 2000U}};
 
     const overloaded setupVisitor{
@@ -222,7 +222,7 @@ int main()
                 return;
             }
 
-            dac.setInputCode(arg.m_amplitude, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+            dac.setInputCode(arg.m_amplitude, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
         },
         [&dacArray](const SawtoothData &arg)
         {
@@ -248,7 +248,7 @@ int main()
                 {
                     for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                     {
-                        dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                        dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
                     }
                 }
             }
@@ -285,11 +285,11 @@ int main()
             {
                 for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                 {
-                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
                 }
                 for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
                 {
-                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
                 }
             }
         },

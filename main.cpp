@@ -26,7 +26,8 @@
 #include <variant>
 #include <cstring>
 
-using DisplayDriverType = SH1106::SH1106_128x64<I2C::I2CPicoHw>;
+using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoHw>;
+using DacDriverType = Dac::MCP4725<I2C::I2CPicoHw>;
 
 template <class... Ts>
 struct overloaded : Ts...
@@ -170,15 +171,14 @@ int main()
 
     printf("Raspberry Pico Function Generator\n");
 
-    MCP4725 dacArray[2]{};
-    if (!dacArray[0].init(MCP4725::I2C_Addr::MCP4725A0_Addr_A00, i2c0, i2cSpeedKHz, SDA0, SCL0, 50000))
+    DacDriverType dacArray[2]{};
+    if (!dacArray[0].init(DacDriverType::MCP4725::I2C_Addr::MCP4725A0_Addr_A00, i2c0, i2cSpeedKHz, SDA0, SCL0, 50000))
     {
         printf("DAC0 not connected\n");
         return -1;
     }
 
-    MCP4725 dac1{};
-    if (!dacArray[1].init(MCP4725::I2C_Addr::MCP4725A0_Addr_A00, i2c1, i2cSpeedKHz, SDA1, SCL1, 50000))
+    if (!dacArray[1].init(DacDriverType::I2C_Addr::MCP4725A0_Addr_A00, i2c1, i2cSpeedKHz, SDA1, SCL1, 50000))
     {
         printf("DAC1 not connected\n");
         return -1;
@@ -186,7 +186,7 @@ int main()
 
     for (auto &dac : dacArray)
     {
-        dac.setInputCode(0, MCP4725::CmdType::EEPROM_Mode, MCP4725::PowerDownType::On_500kOhm);
+        dac.setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerDownType::On_500kOhm);
     }
 
     multicore_launch_core1(core1_function);
@@ -218,11 +218,11 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
                 return;
             }
 
-            dac.setInputCode(arg.m_amplitude, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
+            dac.setInputCode(arg.m_amplitude, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
         },
         [&dacArray](const SawtoothData &arg)
         {
@@ -232,7 +232,7 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
                 return;
             }
 
@@ -248,7 +248,7 @@ int main()
                 {
                     for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                     {
-                        dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
+                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
                     }
                 }
             }
@@ -258,7 +258,7 @@ int main()
                 {
                     for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
                     {
-                        dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
                     }
                 }
             }
@@ -271,7 +271,7 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
                 return;
             }
 
@@ -285,11 +285,11 @@ int main()
             {
                 for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                 {
-                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
+                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
                 }
                 for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
                 {
-                    dac.setInputCode(counter, MCP4725::CmdType::FastMode, MCP4725::PowerDownType::Off);
+                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
                 }
             }
         },

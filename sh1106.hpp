@@ -10,7 +10,7 @@
 
 #include <cstring>
 
-namespace SH1106
+namespace Lcd
 {
     constexpr uint8_t MAX_WIDTH{132};
     constexpr uint8_t MAX_HEIGHT{64};

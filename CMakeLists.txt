@@ -33,9 +33,12 @@ project(pico_function_generator C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Add executable. Default name is the project name, version 0.1
+add_executable(${PROJECT_NAME})
 
-add_executable(${PROJECT_NAME}
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/i2c/i2c.pio)
+
+# Add executable. Default name is the project name, version 0.1
+target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_interface.hpp
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
@@ -56,8 +59,6 @@ include_directories(${CMAKE_SOURCE_DIR}/lvgl)
 
 # Link LVGL to your target
 target_link_libraries(${PROJECT_NAME} lvgl)
-
-pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/i2c/i2c.pio)
 
 # pull in common dependencies and additional pwm hardware support
 target_link_libraries(${PROJECT_NAME}

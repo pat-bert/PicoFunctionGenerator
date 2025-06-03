@@ -26,7 +26,7 @@
 #include <variant>
 #include <cstring>
 
-using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoHw>;
+using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
 using DacDriverType = Dac::MCP4725<I2C::I2CPicoHw>;
 
 template <class... Ts>
@@ -38,12 +38,14 @@ struct overloaded : Ts...
 template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-constexpr uint8_t SDA0{16U};
-constexpr uint8_t SCL0{17U};
-constexpr uint8_t SDA1{18U};
-constexpr uint8_t SCL1{19U};
-constexpr uint8_t PWM0{0U};
-constexpr uint8_t PWM1{2U};
+constexpr uint8_t sdaDac0{16U};
+constexpr uint8_t sclDac0{17U};
+constexpr uint8_t sdaDac1{18U};
+constexpr uint8_t sclDac1{19U};
+constexpr uint8_t sdaLcd{14U};
+constexpr uint8_t sclLcd{15U};
+constexpr uint8_t pwm0{0U};
+constexpr uint8_t pwm1{2U};
 
 constexpr uint16_t i2cSpeedKHz{400U};
 
@@ -123,7 +125,9 @@ static void rounder_cb(lv_event_t *e)
 
 void core1_function()
 {
-    I2C::I2CPicoHw i2cDisplay{i2c1, i2cSpeedKHz, SDA1, SCL1};
+    constexpr uint pioStatemachineDisplay{0};
+    I2C::I2CPicoPIO i2cDisplay{pio0, pioStatemachineDisplay, sdaLcd, sclLcd};
+    i2cDisplay.init();
 
     constexpr uint8_t column_offset{2};
     DisplayDriverType displayDriver{&i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};
@@ -171,26 +175,24 @@ int main()
 
     printf("Raspberry Pico Function Generator\n");
 
-    I2C::I2CPicoHw i2cDac0{i2c0, i2cSpeedKHz, SDA0, SCL0};
-    I2C::I2CPicoHw i2cDac1{i2c1, i2cSpeedKHz, SDA1, SCL1};
+    I2C::I2CPicoHw i2cDac0{i2c0, i2cSpeedKHz, sdaDac0, sclDac0};
+    I2C::I2CPicoHw i2cDac1{i2c1, i2cSpeedKHz, sdaDac1, sclDac1};
 
     i2cDac0.init();
     i2cDac1.init();
 
-    DacDriverType dacArray[2]{
+    DacDriverType dacArray[]{
         DacDriverType{&i2cDac0, DacDriverType::I2CAddr::VariantA0_PinA00},
-        DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}};
+        // DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}
+    };
 
-    if (!dacArray[0].isConnected())
+    for (auto &dac : dacArray)
     {
-        printf("DAC0 not connected\n");
-        return -1;
-    }
-
-    if (!dacArray[1].isConnected())
-    {
-        printf("DAC1 not connected\n");
-        return -1;
+        if (!dac.isConnected())
+        {
+            printf("DAC initialization failed\n");
+            return -1;
+        }
     }
 
     for (auto &dac : dacArray)
@@ -200,12 +202,12 @@ int main()
 
     multicore_launch_core1(core1_function);
 
-    gpio_set_function(PWM0, GPIO_FUNC_PWM);
-    gpio_set_function(PWM1, GPIO_FUNC_PWM);
+    gpio_set_function(pwm0, GPIO_FUNC_PWM);
+    gpio_set_function(pwm1, GPIO_FUNC_PWM);
 
     uint scliceArray[2]{};
-    scliceArray[0] = pwm_gpio_to_slice_num(PWM0);
-    scliceArray[1] = pwm_gpio_to_slice_num(PWM1);
+    scliceArray[0] = pwm_gpio_to_slice_num(pwm0);
+    scliceArray[1] = pwm_gpio_to_slice_num(pwm1);
 
     ChannelData waveformData0{TriangleData{true, 0U, 100U, 2000U}};
     // ChannelData waveformData1{TriangleData{true, 1U, 100U, 2000U}};

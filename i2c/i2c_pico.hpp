@@ -4,7 +4,11 @@
 #include "i2c_interface.hpp"
 
 #include "hardware/i2c.h"
+
+extern "C"
+{
 #include "pio_i2c.h"
+}
 
 namespace I2C
 {
@@ -50,7 +54,11 @@ namespace I2C
     class I2CPicoPIO : public I2CInterface<I2CPicoPIO>
     {
     public:
-        I2CPicoPIO(PIO pio, uint sm, uint baudrate, uint sda, uint scl) : m_pio(pio), m_sm(sm), m_baudrate(baudrate), m_sda(sda), m_scl(scl) {}
+        // SCL must be SDA + 1 (for wait mapping)
+        I2CPicoPIO(PIO pio, uint sm, uint sda, uint scl) : m_pio(pio), m_sm(sm), m_sda(sda), m_scl(scl)
+        {
+            assert(scl == sda + 1);
+        }
 
         bool initImpl()
         {
@@ -76,11 +84,10 @@ namespace I2C
         }
 
     private:
-        PIO m_pio;       // PIO instance
-        uint m_sm;       // State machine number
-        uint m_baudrate; // Baudrate in Hz
-        uint m_sda;      // SDA GPIO pin
-        uint m_scl;      // SCL GPIO pin
+        PIO m_pio;  // PIO instance
+        uint m_sm;  // State machine number
+        uint m_sda; // SDA GPIO pin
+        uint m_scl; // SCL GPIO pin
         uint m_pioProgramOffset;
     };
 }

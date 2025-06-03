@@ -123,7 +123,7 @@ static void rounder_cb(lv_event_t *e)
 
 void core1_function()
 {
-    I2C::I2CPicoHw i2cDisplay{i2c1};
+    I2C::I2CPicoHw i2cDisplay{i2c1, i2cSpeedKHz, SDA1, SCL1};
 
     constexpr uint8_t column_offset{2};
     DisplayDriverType displayDriver{&i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};
@@ -171,14 +171,23 @@ int main()
 
     printf("Raspberry Pico Function Generator\n");
 
-    DacDriverType dacArray[2]{};
-    if (!dacArray[0].init(DacDriverType::MCP4725::I2C_Addr::MCP4725A0_Addr_A00, i2c0, i2cSpeedKHz, SDA0, SCL0, 50000))
+    I2C::I2CPicoHw i2cDac0{i2c0, i2cSpeedKHz, SDA0, SCL0};
+    I2C::I2CPicoHw i2cDac1{i2c1, i2cSpeedKHz, SDA1, SCL1};
+
+    i2cDac0.init();
+    i2cDac1.init();
+
+    DacDriverType dacArray[2]{
+        DacDriverType{&i2cDac0, DacDriverType::I2CAddr::VariantA0_PinA00},
+        DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}};
+
+    if (!dacArray[0].isConnected())
     {
         printf("DAC0 not connected\n");
         return -1;
     }
 
-    if (!dacArray[1].init(DacDriverType::I2C_Addr::MCP4725A0_Addr_A00, i2c1, i2cSpeedKHz, SDA1, SCL1, 50000))
+    if (!dacArray[1].isConnected())
     {
         printf("DAC1 not connected\n");
         return -1;
@@ -186,7 +195,7 @@ int main()
 
     for (auto &dac : dacArray)
     {
-        dac.setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerDownType::On_500kOhm);
+        dac.setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerMode::Off_500kOhm);
     }
 
     multicore_launch_core1(core1_function);
@@ -218,11 +227,11 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                 return;
             }
 
-            dac.setInputCode(arg.m_amplitude, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
+            dac.setInputCode(arg.m_amplitude, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
         },
         [&dacArray](const SawtoothData &arg)
         {
@@ -232,7 +241,7 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                 return;
             }
 
@@ -248,7 +257,7 @@ int main()
                 {
                     for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                     {
-                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
+                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
                     }
                 }
             }
@@ -258,7 +267,7 @@ int main()
                 {
                     for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
                     {
-                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
+                        dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                     }
                 }
             }
@@ -271,7 +280,7 @@ int main()
             if (!arg.m_enabled)
             {
                 printf("Disabling channel %d\n", arg.m_channel);
-                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::On_500kOhm);
+                dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                 return;
             }
 
@@ -285,11 +294,11 @@ int main()
             {
                 for (int16_t counter = 0; counter <= arg.m_amplitude; counter += step)
                 {
-                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
+                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
                 }
                 for (int16_t counter = arg.m_amplitude; counter >= 0; counter -= step)
                 {
-                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerDownType::Off);
+                    dac.setInputCode(counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
                 }
             }
         },

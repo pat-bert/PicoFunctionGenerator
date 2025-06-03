@@ -4,7 +4,6 @@
 // Libraries
 #include <stdio.h> // optional for printf debug error messages
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
 
 namespace Dac
 {
@@ -16,14 +15,14 @@ namespace Dac
 		// Section Enums
 
 		/*! 8-bit i2c address. */
-		enum class I2C_Addr : uint8_t
+		enum class I2CAddr : uint8_t
 		{
-			MCP4725A0_Addr_A00 = 0x60, /**< MCP4725A0 with A0 = GND */
-			MCP4725A0_Addr_A01 = 0x61, /**< MCP4725A0 with A0 = VCC */
-			MCP4725A1_Addr_A00 = 0x62, /**< MCP4725A1 with A0 = GND */
-			MCP4725A1_Addr_A01 = 0x63, /**< MCP4725A1 with A0 = VCC */
-			MCP4725A2_Addr_A00 = 0x64, /**< MCP4725A2 with A0 = GND */
-			MCP4725A2_Addr_A01 = 0x65  /**< MCP4725A2 with A0 = VCC */
+			VariantA0_PinA00 = 0x60, /**< MCP4725A0 with A0 = GND */
+			VariantA0_PinA01 = 0x61, /**< MCP4725A0 with A0 = VCC */
+			VariantA1_PinA00 = 0x62, /**< MCP4725A1 with A0 = GND */
+			VariantA1_PinA01 = 0x63, /**< MCP4725A1 with A0 = VCC */
+			VariantA2_PinA00 = 0x64, /**< MCP4725A2 with A0 = GND */
+			VariantA2_PinA01 = 0x65	 /**< MCP4725A2 with A0 = VCC */
 		};
 
 		/*! DAC register, command bits C2C1C0 */
@@ -35,12 +34,12 @@ namespace Dac
 		};
 
 		/*! DAC register, power down bits PD1 PD0 , BSY,POR,xx,xx,xx,PD1,PD0,xx */
-		enum class PowerDownType : uint8_t
+		enum class PowerMode : uint8_t
 		{
-			Off = 0x00,		   /**< Power down off draws 0.40mA no load & 0.29mA max load */
-			On_1kOhm = 0x01,   /**< Power down on, with 1.0 kOhm to GND, draws ~60nA */
-			On_100kOhm = 0x02, /**< Power down on, with 100 kOhm to GND */
-			On_500kOhm = 0x03  /**< Power down on, with 500 kOhm to GND */
+			On = 0x00,			/**< Power down off draws 0.40mA no load & 0.29mA max load */
+			Off_1kOhm = 0x01,	/**< Power down on, with 1.0 kOhm to GND, draws ~60nA */
+			Off_100kOhm = 0x02, /**< Power down on, with 100 kOhm to GND */
+			Off_500kOhm = 0x03	/**< Power down on, with 500 kOhm to GND */
 		};
 
 		/*! DAC library read register type  */
@@ -63,38 +62,9 @@ namespace Dac
 			@brief Constructor for class MCP4725_PIC0
 			@param refV The the reference voltage to be set in Volts.
 		*/
-		MCP4725(float refV = reference_voltage)
+		MCP4725(I2CInterface *interface, I2CAddr addr, float refV = reference_voltage) : m_interface(interface), m_addr(addr)
 		{
 			setReferenceVoltage(refV);
-		}
-
-		/*!
-			@brief Init & config i2c
-			@param addr I2C address 8 bit address 0x6?.
-			@param i2c_type I2C instance of port, IC20 or I2C1.
-			@param CLKspeed I2C Bus Clock speed in Kbit/s. see 7.1 datasheet
-			@param SDApin I2C Data GPIO
-			@param SCLKpin I2C Clock GPIO
-			@return  true if success , false for failure
-		*/
-		bool init(I2C_Addr addr, i2c_inst_t *type, uint16_t speed, uint8_t SDA, uint8_t SCLK, uint32_t I2C_Timeout)
-		{
-			// init I2c pins and interface
-			m_addr = addr;
-			m_i2c = type;
-			m_scl_pin = SCLK;
-			m_sda_pin = SDA;
-			m_clk_speed = speed;
-			m_I2C_Delay = I2C_Timeout;
-
-			gpio_set_function(m_sda_pin, GPIO_FUNC_I2C);
-			gpio_set_function(m_scl_pin, GPIO_FUNC_I2C);
-			gpio_pull_up(m_sda_pin);
-			gpio_pull_up(m_scl_pin);
-			i2c_init(m_i2c, m_clk_speed * 1000);
-			busy_wait_ms(50);
-			// check connection?
-			return isConnected();
 		}
 
 		/*!
@@ -106,7 +76,7 @@ namespace Dac
 			int ReturnCode = 0;
 			uint8_t rxData = 0;
 			// check connection?
-			ReturnCode = i2c_read_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), &rxData, 1, false, m_I2C_Delay);
+			ReturnCode = m_interface->read(static_cast<uint8_t>(m_addr), &rxData, 1);
 			if (ReturnCode < 1)
 			{ // no bytes read back from device or error issued
 				return false;
@@ -136,19 +106,9 @@ namespace Dac
 
 			dataBuffer[0] = static_cast<uint8_t>(typeCall);
 			// Note I2c address is MCP4725_GENERAL_CALL_ADDRESS
-			ReturnCode = i2c_write_timeout_us(m_i2c, static_cast<uint8_t>(GeneralCallType::Address), dataBuffer, 1, false, m_I2C_Delay);
+			ReturnCode = m_interface->write(static_cast<uint8_t>(GeneralCallType::Address), dataBuffer, 1);
 
 			return ReturnCode >= 1;
-		}
-
-		/*!
-			@brief Switch off the  I2C interface and return I2C GPIO to default state
-		*/
-		void deinitI2C()
-		{
-			gpio_set_function(m_sda_pin, GPIO_FUNC_NULL);
-			gpio_set_function(m_scl_pin, GPIO_FUNC_NULL);
-			i2c_deinit(m_i2c);
 		}
 
 		/*!
@@ -185,7 +145,7 @@ namespace Dac
 			@param powerType MCP4725DAC power type, see enum MCP4725_PowerType_e
 			@return  output of writeCommand method, true for success, false for failure.
 		*/
-		bool setInputCode(uint16_t inputCode, CmdType mode = CmdType::FastMode, PowerDownType powerType = PowerDownType::Off)
+		bool setInputCode(uint16_t inputCode, CmdType mode = CmdType::FastMode, PowerMode powerType = PowerMode::On)
 		{
 			if (m_safetyCheck == true)
 			{
@@ -224,7 +184,7 @@ namespace Dac
 			@param powerType MCP4725DAC power type, see enum MCP4725_PowerType_e
 			@return  output of writeCommand method, true for success, false for failure.
 		*/
-		bool setVoltage(float voltage, CmdType mode = CmdType::FastMode, PowerDownType powerType = PowerDownType::Off)
+		bool setVoltage(float voltage, CmdType mode = CmdType::FastMode, PowerMode powerType = PowerMode::On)
 		{
 			uint16_t voltageValue = 0;
 
@@ -306,7 +266,7 @@ namespace Dac
 		/*!
 			@brief Get current power type from DAC register
 			@return  power type or 0xFFFF if I2C error
-			@note Power type corresponds to enum PowerDownType
+			@note Power type corresponds to enum PowerMode
 		*/
 		uint16_t getPowerType(void)
 		{
@@ -327,7 +287,7 @@ namespace Dac
 		/*!
 			@brief Get stored power type from EEPROM
 			@return  EEPROM power type or 0xFFFF if I2C error
-			@note Power type corresponds to enum PowerDownType
+			@note Power type corresponds to enum PowerMode
 		*/
 		uint16_t getStoredPowerType(void)
 		{
@@ -402,7 +362,7 @@ namespace Dac
 			@param PowerType MCP4725 power type, see enum MCP4725_PowerType_e
 			@return   true for success, false for failure.
 		*/
-		bool writeCommand(uint16_t inputCode, CmdType mode, PowerDownType powerType)
+		bool writeCommand(uint16_t inputCode, CmdType mode, PowerMode powerType)
 		{
 			uint8_t dataBuffer[3];
 			uint8_t lowByte = 0;
@@ -417,7 +377,7 @@ namespace Dac
 				highByte = static_cast<uint8_t>((inputCode >> 8) & 0x00FF);
 				dataBuffer[0] = static_cast<uint8_t>(mode) | (static_cast<uint8_t>(powerType) << 4) | highByte; // C2,C1,PD1,PD0,D11,D10,D9,D8
 				dataBuffer[1] = lowByte;																		// D7,D6,D5,D4,D3,D2,D1,D0
-				ReturnCode = i2c_write_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), dataBuffer, 2, false, m_I2C_Delay);
+				ReturnCode = m_interface->write(static_cast<uint8_t>(m_addr), dataBuffer, 2);
 				if (ReturnCode < 1)
 				{
 					return false;
@@ -435,7 +395,7 @@ namespace Dac
 				dataBuffer[0] = static_cast<uint8_t>(mode) | (static_cast<uint8_t>(powerType) << 1); // C2,C1,C0,x,x,PD1,PD0,x
 				dataBuffer[1] = highByte;															 // D11,D10,D9,D8,D7,D6,D5,D4
 				dataBuffer[2] = lowByte;															 // D3,D2,D1,D0,x,x,x,x
-				ReturnCode = i2c_write_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), dataBuffer, 3, false, m_I2C_Delay);
+				ReturnCode = m_interface->write(static_cast<uint8_t>(m_addr), dataBuffer, 3);
 				if (ReturnCode < 1)
 				{
 					return false;
@@ -478,18 +438,18 @@ namespace Dac
 			switch (readType)
 			{
 			case ReadType::Settings: // Read one byte settings
-				ReturnCode = i2c_read_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), dataBuffer, 1, false, m_I2C_Delay);
+				ReturnCode = m_interface->read(static_cast<uint8_t>(m_addr), dataBuffer, 1);
 				dataWord = dataBuffer[0];
 				break;
 
 			case ReadType::DACReg: // Read 3 bytes  DAC register data, skip first 1 don't care
-				ReturnCode = i2c_read_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), dataBuffer, 3, false, m_I2C_Delay);
+				ReturnCode = m_interface->read(static_cast<uint8_t>(m_addr), dataBuffer, 3);
 				dataWord = dataBuffer[1];
 				dataWord = (dataWord << 8) | dataBuffer[2];
 				break;
 
 			case ReadType::EEPROM: // Read 5 bytes EEPROM data , first 3 don't care
-				ReturnCode = i2c_read_timeout_us(m_i2c, static_cast<uint8_t>(m_addr), dataBuffer, 5, false, m_I2C_Delay);
+				ReturnCode = m_interface->read(static_cast<uint8_t>(m_addr), dataBuffer, 5);
 				dataWord = dataBuffer[3];
 				dataWord = (dataWord << 8) | dataBuffer[4];
 				break;
@@ -506,13 +466,8 @@ namespace Dac
 		}
 
 	private:
-		// I2c related
-		I2C_Addr m_addr;
-		i2c_inst_t *m_i2c; // i2C port number, i2c0 or i2c1
-		uint8_t m_sda_pin;
-		uint8_t m_scl_pin;
-		uint16_t m_clk_speed = 100;	  // I2C bus speed in khz
-		uint32_t m_I2C_Delay = 50000; /**<  uS delay , I2C timeout */
+		I2CInterface *m_interface;
+		I2CAddr m_addr;
 
 		float m_refVoltage;
 		uint16_t m_bitsPerVolt;

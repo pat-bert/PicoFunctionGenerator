@@ -1,6 +1,9 @@
 #ifndef I2C_INTERFACE_HPP_INCLUDED
 #define I2C_INTERFACE_HPP_INCLUDED
 
+#include <cstdint>
+#include <cstddef>
+
 namespace I2C
 {
     template <typename Derived>

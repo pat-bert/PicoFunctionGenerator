@@ -1,5 +1,5 @@
-#ifndef __WAVEFORM_DATA_H
-#define __WAVEFORM_DATA_H
+#ifndef WAVEFORM_DATA_HPP_INCLUDED
+#define WAVEFORM_DATA_HPP_INCLUDED
 
 #include <variant>
 

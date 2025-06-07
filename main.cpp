@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-// Output PWM signals on pins 0 and 1
-
 #include "pico/divider.h"
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
@@ -15,19 +13,13 @@
 #include "hardware/irq.h"
 #include "hardware/timer.h"
 
-#include "lvgl/lvgl.h"
-#include "sh1106.hpp"
-#include "i2c/i2c_pico.hpp"
-
-#include "mcp4725.hpp"
+#include "hal.hpp"
+#include "ui_task.hpp"
 #include "waveform_data.hpp"
 
 #include <cmath>
 #include <variant>
 #include <cstring>
-
-using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
-using DacDriverType = Dac::MCP4725<I2C::I2CPicoHw>;
 
 template <class... Ts>
 struct overloaded : Ts...
@@ -38,135 +30,8 @@ struct overloaded : Ts...
 template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-constexpr uint8_t sdaDac0{16U};
-constexpr uint8_t sclDac0{17U};
-constexpr uint8_t sdaDac1{18U};
-constexpr uint8_t sclDac1{19U};
-constexpr uint8_t sdaLcd{14U};
-constexpr uint8_t sclLcd{15U};
-constexpr uint8_t pwm0{0U};
-constexpr uint8_t pwm1{2U};
-
-constexpr uint16_t i2cSpeedKHz{400U};
-
 bool pwm_set_freq_duty(uint32_t slice_num, uint32_t chan, uint32_t freq,
                        int duty_cycle);
-
-void lv_draw_sw_i1_convert_to_vtiled_pages_first(const void *buf, uint32_t buf_size, uint32_t width, uint32_t height,
-                                                 void *out_buf, uint32_t out_buf_size, bool bit_order_lsb)
-{
-
-    LV_ASSERT(buf && out_buf);
-    LV_ASSERT(width % 8 == 0 && height % 8 == 0);
-    LV_ASSERT(buf_size >= (width / 8) * height);
-    LV_ASSERT(out_buf_size >= buf_size);
-
-    lv_memset(out_buf, 0, out_buf_size);
-
-    const uint8_t *src_buf = (uint8_t *)buf;
-    uint8_t *dst_buf = (uint8_t *)out_buf;
-
-    for (uint32_t y = 0; y < height; y++)
-    {
-        for (uint32_t x = 0; x < width; x++)
-        {
-            uint32_t src_index = (x + (y * width)) >> 3;
-            uint32_t dst_index = x + (y >> 3) * width;
-            uint8_t bit = (src_buf[src_index] >> (7 - (x % 8))) & 0x01;
-            if (bit_order_lsb)
-            {
-                dst_buf[dst_index] |= (bit << (y % 8));
-            }
-            else
-            {
-                dst_buf[dst_index] |= (bit << (7 - (y % 8)));
-            }
-        }
-    }
-}
-
-void flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
-{
-    // Skip the first 8 bytes of the buffer, which are used for metadata
-    px_map += 8;
-
-    auto *displayDriver = static_cast<DisplayDriverType *>(lv_display_get_user_data(display));
-
-    uint16_t buffer_size = DisplayDriverType::get_buffer_size();
-    uint8_t buffer_converted[buffer_size];
-
-    lv_draw_sw_i1_convert_to_vtiled_pages_first(
-        px_map,
-        buffer_size,
-        displayDriver->get_width(),
-        displayDriver->get_height(),
-        buffer_converted,
-        buffer_size,
-        true);
-
-    displayDriver->write_area(
-        static_cast<uint8_t>(area->x1),
-        static_cast<uint8_t>(area->x2),
-        static_cast<uint8_t>(area->y1),
-        static_cast<uint8_t>(area->y2),
-        buffer_converted);
-
-    lv_display_flush_ready(display);
-}
-
-static void rounder_cb(lv_event_t *e)
-{
-    lv_area_t *area = static_cast<lv_area_t *>(lv_event_get_param(e));
-
-    /* Round the height to the nearest multiple of 8 */
-    area->y1 = (area->y1 & ~0x7);
-    area->y2 = (area->y2 | 0x7);
-}
-
-void core1_function()
-{
-    constexpr uint pioStatemachineDisplay{0};
-    I2C::I2CPicoPIO i2cDisplay{pio0, pioStatemachineDisplay, sdaLcd, sclLcd};
-    i2cDisplay.init();
-
-    constexpr uint8_t column_offset{2};
-    DisplayDriverType displayDriver{&i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};
-    displayDriver.init();
-    displayDriver.clear_display();
-    displayDriver.inverted(false);
-    displayDriver.flipped(true);
-    displayDriver.reverse_cols(true);
-    sleep_ms(5000);
-
-    static uint8_t buf1[DisplayDriverType::get_buffer_size() + 8];
-
-    lv_init();
-
-    lv_display_t *display = lv_display_create(displayDriver.get_width(), displayDriver.get_height());
-    lv_theme_t *theme = lv_theme_mono_init(
-        display,        // Active display
-        true,           // Enable dark mode
-        LV_FONT_DEFAULT // Default font
-    );
-
-    lv_display_set_theme(display, theme);
-    lv_display_set_color_format(display, LV_COLOR_FORMAT_I1);
-    lv_display_set_user_data(display, static_cast<void *>(&displayDriver));
-
-    lv_display_set_buffers(display, buf1, nullptr, sizeof(buf1), LV_DISPLAY_RENDER_MODE_FULL);
-    lv_display_set_flush_cb(display, flush_cb);
-    lv_display_add_event_cb(display, rounder_cb, LV_EVENT_INVALIDATE_AREA, display);
-
-    lv_obj_t *label = lv_label_create(lv_screen_active());
-    lv_label_set_text(label, "Hello world");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
-    while (true)
-    {
-        uint32_t sleepMs{lv_timer_handler()};
-        sleep_ms(sleepMs);
-    }
-}
 
 int main()
 {
@@ -174,6 +39,7 @@ int main()
     sleep_ms(2000); // wait for USB serial to be ready
 
     printf("Raspberry Pico Function Generator\n");
+    multicore_launch_core1(Ui::ui_task);
 
     I2C::I2CPicoHw i2cDac0{i2c0, i2cSpeedKHz, sdaDac0, sclDac0};
     I2C::I2CPicoHw i2cDac1{i2c1, i2cSpeedKHz, sdaDac1, sclDac1};
@@ -199,8 +65,6 @@ int main()
         dac.setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerMode::Off_500kOhm);
     }
 
-    multicore_launch_core1(core1_function);
-
     gpio_set_function(pwm0, GPIO_FUNC_PWM);
     gpio_set_function(pwm1, GPIO_FUNC_PWM);
 
@@ -216,13 +80,11 @@ int main()
         {
             // Find out which PWM slice is connected to GPIO
             uint slice_num = scliceArray[arg.m_channel];
-            printf("Executing rectangle: CH%d (slice%d), %d Hz %d%%\n", arg.m_channel, slice_num, arg.m_frequency, arg.m_dutyCycle);
             pwm_set_freq_duty(slice_num, PWM_CHAN_A, arg.m_frequency, arg.m_dutyCycle);
             pwm_set_enabled(slice_num, arg.m_enabled);
         },
         [&dacArray](const ConstantData &arg)
         {
-            printf("Executing constant: CH%d, %d Ampl\n", arg.m_channel, arg.m_amplitude);
             auto &dac = dacArray[arg.m_channel];
 
             if (!arg.m_enabled)
@@ -236,7 +98,6 @@ int main()
         },
         [&dacArray](SawtoothData &arg)
         {
-            printf("Executing saw tooth: CH%d, %d Hz %d Ampl, %s\n", arg.m_channel, arg.m_frequency, arg.m_amplitude, arg.m_inc ? "inc" : "dec");
             auto &dac = dacArray[arg.m_channel];
 
             if (!arg.m_enabled)
@@ -270,7 +131,6 @@ int main()
         },
         [&dacArray](TriangleData &arg)
         {
-            printf("Executing triangle: CH%d, %d Hz %d Ampl\n", arg.m_channel, arg.m_frequency, arg.m_amplitude);
             auto &dac = dacArray[arg.m_channel];
 
             if (!arg.m_enabled)
@@ -306,10 +166,7 @@ int main()
                 }
             }
         },
-        [&dacArray](const SineData &arg)
-        {
-            printf("Executing sine\n");
-        }};
+        [&dacArray](const SineData &arg) {}};
 
     while (true)
     {

@@ -43,7 +43,10 @@ target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
     i2c/pio_i2c.h
+    hal.hpp
     lv_conf.h
+    ui_task.hpp
+    ui_task.cpp
     main.cpp
     mcp4725_Sinewave_Data.cpp
     mcp4725_Sinewave_Data.hpp

@@ -15,6 +15,7 @@ namespace I2C
     class I2CPicoHw : public I2CInterface<I2CPicoHw>
     {
     public:
+        I2CPicoHw() = default;
         I2CPicoHw(i2c_inst_t *port, uint baudrate, uint sda, uint scl) : m_port(port), m_baudrate(baudrate), m_sda(sda), m_scl(scl) {}
 
         bool initImpl()

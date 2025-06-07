@@ -62,6 +62,8 @@ namespace Dac
 			@brief Constructor for class MCP4725_PIC0
 			@param refV The the reference voltage to be set in Volts.
 		*/
+		MCP4725() = default;
+
 		MCP4725(I2CInterface *interface, I2CAddr addr, float refV = reference_voltage) : m_interface(interface), m_addr(addr)
 		{
 			setReferenceVoltage(refV);

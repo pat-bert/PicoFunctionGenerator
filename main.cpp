@@ -20,6 +20,7 @@
 #include <cmath>
 #include <variant>
 #include <cstring>
+#include <array>
 
 template <class... Ts>
 struct overloaded : Ts...
@@ -41,45 +42,47 @@ int main()
     printf("Raspberry Pico Function Generator\n");
     multicore_launch_core1(Ui::ui_task);
 
-    I2C::I2CPicoHw i2cDac0{i2c0, i2cSpeedKHz, sdaDac0, sclDac0};
-    I2C::I2CPicoHw i2cDac1{i2c1, i2cSpeedKHz, sdaDac1, sclDac1};
+    constexpr uint8_t numberOfChannels{2U};
 
-    i2cDac0.init();
-    i2cDac1.init();
+    std::array<i2c_inst_t *, numberOfChannels> i2cPorts{i2c0, i2c1};
+    std::array<uint, numberOfChannels> sdaDacs{sdaDac0, sdaDac1};
+    std::array<uint, numberOfChannels> sclDacs{sclDac0, sclDac1};
+    std::array<I2C::I2CPicoHw, numberOfChannels> i2cDrivers{};
+    std::array<DacDriverType, numberOfChannels> dacArray{};
+    std::array<uint, numberOfChannels> pwmPins{pwm0, pwm1};
+    std::array<uint, numberOfChannels> pwmSlices{};
 
-    DacDriverType dacArray[]{
-        DacDriverType{&i2cDac0, DacDriverType::I2CAddr::VariantA0_PinA00},
-        DacDriverType{&i2cDac1, DacDriverType::I2CAddr::VariantA0_PinA00}};
-
-    for (auto &dac : dacArray)
+    for (size_t i = 0; i < numberOfChannels; ++i)
     {
-        if (!dac.isConnected())
+        i2cDrivers[i] = I2C::I2CPicoHw{i2cPorts[i], i2cSpeedKHz, sdaDacs[i], sclDacs[i]};
+        if (!i2cDrivers[i].init())
         {
-            printf("DAC initialization failed\n");
+            printf("I2C driver %zu initialization failed\n", i);
             return -1;
         }
+
+        dacArray[i] = DacDriverType{&(i2cDrivers[i]), DacDriverType::I2CAddr::VariantA0_PinA00};
+        if (!dacArray[i].isConnected())
+        {
+            printf("DAC %zu is not connected\n", i);
+            return -1;
+        }
+
+        dacArray[i].setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerMode::Off_500kOhm);
+
+        gpio_set_function(pwmPins[i], GPIO_FUNC_PWM);
+        pwmSlices[i] = pwm_gpio_to_slice_num(pwmPins[i]);
     }
 
-    for (auto &dac : dacArray)
-    {
-        dac.setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerMode::Off_500kOhm);
-    }
-
-    gpio_set_function(pwm0, GPIO_FUNC_PWM);
-    gpio_set_function(pwm1, GPIO_FUNC_PWM);
-
-    uint scliceArray[2]{};
-    scliceArray[0] = pwm_gpio_to_slice_num(pwm0);
-    scliceArray[1] = pwm_gpio_to_slice_num(pwm1);
-
-    ChannelData waveformData0{SawtoothData{true, 0U, 100U, 2000U, true}};
-    ChannelData waveformData1{TriangleData{true, 1U, 100U, 2000U}};
+    std::array<ChannelData, numberOfChannels> waveFormDataArray{
+        SawtoothData{true, 0U, 100U, 2000U, true},
+        TriangleData{true, 1U, 100U, 2000U}};
 
     const overloaded setupVisitor{
-        [&scliceArray](const RectangleData &arg)
+        [&pwmSlices](const RectangleData &arg)
         {
             // Find out which PWM slice is connected to GPIO
-            uint slice_num = scliceArray[arg.m_channel];
+            uint slice_num = pwmSlices[arg.m_channel];
             pwm_set_freq_duty(slice_num, PWM_CHAN_A, arg.m_frequency, arg.m_dutyCycle);
             pwm_set_enabled(slice_num, arg.m_enabled);
         },
@@ -170,8 +173,10 @@ int main()
 
     while (true)
     {
-        std::visit(setupVisitor, waveformData0);
-        std::visit(setupVisitor, waveformData1);
+        for (auto &waveFormData : waveFormDataArray)
+        {
+            std::visit(setupVisitor, waveFormData);
+        }
     }
 }
 

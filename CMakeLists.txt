@@ -67,10 +67,12 @@ target_link_libraries(${PROJECT_NAME} lvgl)
 target_link_libraries(${PROJECT_NAME}
     pico_stdlib
     pico_multicore
+    hardware_adc
     hardware_dma
     hardware_i2c
     hardware_pio
     hardware_pwm
+    hardware_timer
 )
 
 # enable usb output, disable uart output

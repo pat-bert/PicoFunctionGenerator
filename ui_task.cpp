@@ -1,11 +1,21 @@
 #include "ui_task.hpp"
 
+#include "hardware/adc.h"
+#include "hardware/timer.h"
+
 namespace Ui
 {
+    constexpr uint32_t timerPeriodMs{20U};
+
+    bool timer_callback(repeating_timer_t *rt)
+    {
+        lv_tick_inc(timerPeriodMs);
+        return true; // Return true to keep the timer running
+    }
+
     void lv_draw_sw_i1_convert_to_vtiled_pages_first(const void *buf, uint32_t buf_size, uint32_t width, uint32_t height,
                                                      void *out_buf, uint32_t out_buf_size, bool bit_order_lsb)
     {
-
         LV_ASSERT(buf && out_buf);
         LV_ASSERT(width % 8 == 0 && height % 8 == 0);
         LV_ASSERT(buf_size >= (width / 8) * height);
@@ -42,7 +52,7 @@ namespace Ui
 
         auto *displayDriver = static_cast<DisplayDriverType *>(lv_display_get_user_data(display));
 
-        uint16_t buffer_size = DisplayDriverType::get_buffer_size();
+        constexpr uint16_t buffer_size = DisplayDriverType::get_buffer_size();
         uint8_t buffer_converted[buffer_size];
 
         lv_draw_sw_i1_convert_to_vtiled_pages_first(
@@ -75,7 +85,6 @@ namespace Ui
 
     void ui_task()
     {
-        constexpr uint pioStatemachineDisplay{0};
         I2C::I2CPicoPIO i2cDisplay{pio0, pioStatemachineDisplay, sdaLcd, sclLcd};
         i2cDisplay.init();
 
@@ -107,14 +116,31 @@ namespace Ui
         lv_display_set_flush_cb(display, flush_cb);
         lv_display_add_event_cb(display, rounder_cb, LV_EVENT_INVALIDATE_AREA, display);
 
-        lv_obj_t *label = lv_label_create(lv_screen_active());
-        lv_label_set_text(label, "Hello world");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_t *label0 = lv_label_create(lv_screen_active());
+        lv_obj_t *label1 = lv_label_create(lv_screen_active());
+        lv_label_set_text(label0, "ADC0:");
+        lv_label_set_text(label1, "ADC1:");
+        lv_obj_align(label0, LV_ALIGN_LEFT_MID, 0, -10);
+        lv_obj_align(label1, LV_ALIGN_LEFT_MID, 0, 10);
+
+        adc_init();
+        adc_gpio_init(adc0);
+        adc_gpio_init(adc1);
+
+        repeating_timer_t timer{};
+        // Negative value means that the period is between starts of repeated calls
+        add_repeating_timer_ms(-timerPeriodMs, timer_callback, nullptr, &timer);
 
         while (true)
         {
-            uint32_t sleepMs{lv_timer_handler()};
-            sleep_ms(sleepMs);
+            adc_select_input(0);
+            uint16_t adc0Value = adc_read();
+            adc_select_input(1);
+            uint16_t adc1Value = adc_read();
+            lv_label_set_text_fmt(label0, "ADC0: %u", adc0Value);
+            lv_label_set_text_fmt(label1, "ADC1: %u", adc1Value);
+            lv_timer_handler();
+            sleep_ms(100U);
         }
     }
 }

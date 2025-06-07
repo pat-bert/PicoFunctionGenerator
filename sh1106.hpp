@@ -220,8 +220,8 @@ namespace Lcd
 
             for (uint8_t page = start_page; page <= end_page; page++)
             {
-                set_page_addr(page);          // Set the page start address
-                col_start(x1 + m_col_offset); // Set the lower start column address
+                set_page_addr(page); // Set the page start address
+                col_start(x1);       // Set the lower start column address
                 overall_return = overall_return | write_data(buffer + x1, width);
                 buffer += Width;
             }

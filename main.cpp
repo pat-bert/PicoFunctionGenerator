@@ -44,17 +44,16 @@ int main()
 
     constexpr uint8_t numberOfChannels{2U};
 
-    std::array<i2c_inst_t *, numberOfChannels> i2cPorts{i2c0, i2c1};
     std::array<uint, numberOfChannels> sdaDacs{sdaDac0, sdaDac1};
     std::array<uint, numberOfChannels> sclDacs{sclDac0, sclDac1};
-    std::array<I2C::I2CPicoHw, numberOfChannels> i2cDrivers{};
+    std::array<DacInterfaceDriverType, numberOfChannels> i2cDrivers{};
     std::array<DacDriverType, numberOfChannels> dacArray{};
     std::array<uint, numberOfChannels> pwmPins{pwm0, pwm1};
     std::array<uint, numberOfChannels> pwmSlices{};
 
     for (size_t i = 0; i < numberOfChannels; ++i)
     {
-        i2cDrivers[i] = I2C::I2CPicoHw{i2cPorts[i], i2cSpeedKHz, sdaDacs[i], sclDacs[i]};
+        i2cDrivers[i] = DacInterfaceDriverType{i2c_get_instance(i), i2cSpeedKHz, sdaDacs[i], sclDacs[i]};
         if (!i2cDrivers[i].init())
         {
             printf("I2C driver %zu initialization failed\n", i);
@@ -75,8 +74,8 @@ int main()
     }
 
     std::array<ChannelData, numberOfChannels> waveFormDataArray{
-        SawtoothData{true, 0U, 100U, 2000U, true},
-        TriangleData{true, 1U, 100U, 2000U}};
+        SawtoothData{true, 0U, 500U, 4095U, true},
+        TriangleData{true, 1U, 500U, 4095U}};
 
     const overloaded setupVisitor{
         [&pwmSlices](const RectangleData &arg)

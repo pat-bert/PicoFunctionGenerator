@@ -7,7 +7,8 @@
 #include "sh1106.hpp"
 
 using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
-using DacDriverType = Dac::MCP4725<I2C::I2CPicoHw>;
+using DacInterfaceDriverType = I2C::I2CPicoHw;
+using DacDriverType = Dac::MCP4725<DacInterfaceDriverType>;
 
 constexpr uint pwm0{0U};
 constexpr uint pwm1{2U};
@@ -22,6 +23,6 @@ constexpr uint adc1{27U};
 
 constexpr uint pioStatemachineDisplay{0U};
 
-constexpr uint16_t i2cSpeedKHz{400U};
+constexpr uint16_t i2cSpeedKHz{1000U};
 
 #endif

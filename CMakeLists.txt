@@ -39,6 +39,8 @@ pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/i2c/i2c.pio)
 
 # Add executable. Default name is the project name, version 0.1
 target_sources(${PROJECT_NAME} PRIVATE
+    i2c/i2c_dma.c
+    i2c/i2c_dma.h
     i2c/i2c_interface.hpp
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c

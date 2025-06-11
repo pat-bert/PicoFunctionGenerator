@@ -10,6 +10,8 @@ extern "C"
 #include "pio_i2c.h"
 }
 
+#include "i2c_dma.h"
+
 namespace I2C
 {
     class I2CPicoHw : public I2CInterface<I2CPicoHw>
@@ -52,6 +54,55 @@ namespace I2C
         uint m_scl;         // SCL GPIO pin
     };
 
+    class I2CPicoHwDma : public I2CInterface<I2CPicoHwDma>
+    {
+    public:
+        I2CPicoHwDma() = default;
+        I2CPicoHwDma(i2c_inst_t *port, uint baudrate, uint sda, uint scl) : m_i2cDma{nullptr}, m_port(port), m_baudrate(baudrate), m_sda(sda), m_scl(scl) {}
+
+        bool initImpl()
+        {
+            return (0 == i2c_dma_init(&m_i2cDma, m_port, m_baudrate * 1000, m_sda, m_scl));
+        }
+
+        bool deinitImpl()
+        {
+            i2c_deinit(m_port);
+            gpio_set_function(m_sda, GPIO_FUNC_NULL);
+            gpio_set_function(m_scl, GPIO_FUNC_NULL);
+            return true;
+        }
+
+        int writeImpl(uint8_t addr, const uint8_t *data, size_t length)
+        {
+            int errorCode = i2c_dma_write(m_i2cDma, addr, data, length);
+            if (errorCode == 0)
+            {
+                return length; // Return number of bytes written
+            }
+
+            return 0;
+        }
+
+        int readImpl(uint8_t addr, uint8_t *data, size_t length)
+        {
+            int errorCode = i2c_dma_read(m_i2cDma, addr, data, length);
+            if (errorCode == 0)
+            {
+                return length; // Return number of bytes read
+            }
+
+            return 0;
+        }
+
+    private:
+        i2c_dma_t *m_i2cDma; // I2C DMA instance
+        i2c_inst_t *m_port;  // I2C port instance
+        uint m_baudrate;     // Baudrate in Hz
+        uint m_sda;          // SDA GPIO pin
+        uint m_scl;          // SCL GPIO pin
+    };
+
     class I2CPicoPIO : public I2CInterface<I2CPicoPIO>
     {
     public:
@@ -76,12 +127,22 @@ namespace I2C
 
         int writeImpl(uint8_t addr, const uint8_t *data, size_t length)
         {
-            return pio_i2c_write_blocking(m_pio, m_sm, addr, const_cast<uint8_t *>(data), length);
+            int result = pio_i2c_write_blocking(m_pio, m_sm, addr, const_cast<uint8_t *>(data), length);
+            if (result == 0)
+            {
+                return length; // Return number of bytes written
+            }
+            return 0; // Return error code
         }
 
         int readImpl(uint8_t addr, uint8_t *data, size_t length)
         {
-            return pio_i2c_read_blocking(m_pio, m_sm, addr, data, length);
+            int result = pio_i2c_read_blocking(m_pio, m_sm, addr, data, length);
+            if (result == 0)
+            {
+                return length; // Return number of bytes read
+            }
+            return 0; // Return error code
         }
 
     private:

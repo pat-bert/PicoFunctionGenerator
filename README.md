@@ -53,3 +53,17 @@ GPIO-Pin-Number|Function
 17 | I²C clock for DAC Channel 0
 18 | I²C data for DAC Channel 1
 19 | I²C clock for DAC Channel 1
+
+## Waveform output
+
+Here is an example capture showing sawtooth and triangle waveforms.
+Since the frequency is only calculated based on the estimated duration of the I²C update
+there is a lot of jitter. Due to the blocking nature of the Pico SDK I²C-driver the frequency
+is also only half of the requested one. This shall be improved in the feature either via
+OS task switching when blocking or via DMA for the whole waveform.
+
+Unfortunately, there are no drivers for DMA-based I²C nor for high speed mode (3.4 MHz) as part of the SDK.
+Zephyr on the other hand has a lot of drivers, e.g. for the DAC and display but only as a C-interface
+and the PIO support is lacking (no I²C driver).
+
+![Channel 0 has sawtooth output, channel 1 has triangle output](TriangleAndSawTooth.png)

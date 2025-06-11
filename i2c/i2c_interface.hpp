@@ -10,21 +10,43 @@ namespace I2C
     class I2CInterface
     {
     public:
+        /// @brief  Initializes the I2C interface.
+        /// @details This method should be implemented by the derived class to perform
+        ///         the actual initialization of the I2C interface.
+        /// @return true if initialization was successful, false otherwise.
         bool init()
         {
             return static_cast<Derived *>(this)->initImpl();
         }
 
+        /// @brief  Deinitializes the I2C interface.
+        /// @details This method should be implemented by the derived class to perform
+        ///         the actual deinitialization of the I2C interface.
+        /// @return true if deinitialization was successful, false otherwise.
         bool deinit()
         {
             return static_cast<Derived *>(this)->deinitImpl();
         }
 
+        /// @brief  Writes data to the specified I2C address.
+        /// @details This method should be implemented by the derived class to perform
+        ///         the actual write operation to the I2C bus.
+        /// @param  addr   The I2C address to write to.
+        /// @param  data   Pointer to the data to write.
+        /// @param  length The number of bytes to write.
+        /// @return The number of bytes written, or a negative error code on failure.
         int write(uint8_t addr, const uint8_t *data, size_t length)
         {
             return static_cast<Derived *>(this)->writeImpl(addr, data, length);
         }
 
+        /// @brief  Reads data from the specified I2C address.
+        /// @details This method should be implemented by the derived class to perform
+        ///         the actual read operation from the I2C bus.
+        /// @param  addr   The I2C address to read from.
+        /// @param  data   Pointer to the buffer to store the read data.
+        /// @param  length The number of bytes to read.
+        /// @return The number of bytes read, or a negative error code on failure.
         int read(uint8_t addr, uint8_t *data, size_t length)
         {
             return static_cast<Derived *>(this)->readImpl(addr, data, length);

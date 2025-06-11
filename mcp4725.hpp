@@ -149,12 +149,9 @@ namespace Dac
 		*/
 		bool setInputCode(uint16_t inputCode, CmdType mode = CmdType::FastMode, PowerMode powerType = PowerMode::On)
 		{
-			if (m_safetyCheck == true)
+			if (inputCode > max_value)
 			{
-				if (inputCode > max_value)
-				{
-					inputCode = max_value;
-				}
+				inputCode = max_value;
 			}
 
 			return writeCommand(inputCode, mode, powerType);
@@ -192,22 +189,15 @@ namespace Dac
 
 			// Convert voltage to DAC bits
 			// xx,xx,xx,xx,D11,D10,D9,D8 ,D7,D6,D4,D3,D2,D9,D1,D0
-			if (m_safetyCheck == true)
+			if (voltage >= m_refVoltage)
 			{
-				if (voltage >= m_refVoltage)
-				{
-					voltageValue = max_value;
-				}
-				else if (voltage <= 0)
-				{
-					voltageValue = 0; // make sure value never below zero
-				}
-				else
-				{
-					voltageValue = voltage * m_bitsPerVolt;
-				}
+				voltageValue = max_value;
 			}
-			else if (m_safetyCheck == false)
+			else if (voltage <= 0)
+			{
+				voltageValue = 0; // make sure value never below zero
+			}
+			else
 			{
 				voltageValue = voltage * m_bitsPerVolt;
 			}
@@ -305,16 +295,6 @@ namespace Dac
 			{
 				return powerTypeValue;
 			}
-		}
-
-		void setSafetyCheckFlag(bool onOff)
-		{
-			m_safetyCheck = onOff;
-		}
-
-		bool getSafetyCheckFlag(void)
-		{
-			return m_safetyCheck;
 		}
 
 		/*!
@@ -481,7 +461,6 @@ namespace Dac
 		constexpr static auto steps = (1 << resolution); /**< Quantity of DAC steps: 2^12 = 4096 */
 		constexpr static auto max_value = steps - 1;	 /**< Max value = 4096 - 1, range 0 to 4095 */
 
-		bool m_safetyCheck = true;					  // Safety check for voltage level's , true  = on
 		constexpr static uint16_t errorCode = 0xFFFF; /**<  returns this value if I2C bus error from some methods */
 	};
 

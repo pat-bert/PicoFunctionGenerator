@@ -45,13 +45,13 @@ target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
     i2c/pio_i2c.h
+    tasks/waveform_task.cpp
+    tasks/waveform_task.hpp
+    tasks/ui_task.cpp
+    tasks/ui_task.hpp
     hal.hpp
     lv_conf.h
-    ui_task.hpp
-    ui_task.cpp
     main.cpp
-    mcp4725_Sinewave_Data.cpp
-    mcp4725_Sinewave_Data.hpp
     mcp4725.hpp
     sh1106.hpp
     waveform_data.hpp

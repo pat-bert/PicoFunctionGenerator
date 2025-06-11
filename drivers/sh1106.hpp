@@ -90,14 +90,14 @@ namespace Lcd
         }
 
         /**
-         * \brief   5. Set Contrast Control Register: (Double Bytes Command)
+         * @brief   5. Set Contrast Control Register: (Double Bytes Command)
          *          This command is to set contrast setting of the display. The chip
          *          has 256 contrast steps from 00 to FF. The segment output current
          *          increases as the contrast step value increases. Segment output
          *          current setting: ISEG = α/256 X IREF X scale factor Where: α is
          *          contrast step; IREF is reference current equals 18.75µA; Scale
          *          factor = 16.
-         * \param   uint8_t value (0-255), POR = 128
+         * @param   uint8_t value (0-255), POR = 128
          */
         void contrast(uint8_t value)
         {
@@ -105,13 +105,13 @@ namespace Lcd
         }
 
         /**
-         * \brief   10. Set DC-DC OFF/ON: (Double Bytes Command)
+         * @brief   10. Set DC-DC OFF/ON: (Double Bytes Command)
          *          This command is to control the DC-DC voltage converter. The
          *          converter will be turned on by issuing this command then display ON
          *          command. The panel display must be off while issuing this command.
          *          When D = “L”, DC-DC is disable.
          *          When D = “H”, DC-DC will be turned on when display on. (POR)
-         * \param   bool On, POR = true
+         * @param   bool On, POR = true
          */
         void power_on(bool on)
         {
@@ -119,7 +119,7 @@ namespace Lcd
         }
 
         /**
-         * \brief   11. Display OFF/ON: (AEH - AFH)
+         * @brief   11. Display OFF/ON: (AEH - AFH)
          *          Alternatively turns the display on and off.
          *          When D = “L”, Display OFF OLED. (POR)
          *          When D = “H”, Display ON OLED.
@@ -136,7 +136,7 @@ namespace Lcd
          *              3) Holds the display data and operation mode provided before
          *                 the start of the sleep mode.
          *              4) The MPU can access to the built-in display RAM.
-         * \param   bool On, POR = true
+         * @param   bool On, POR = true
          */
         void display_on(bool on)
         {
@@ -144,7 +144,7 @@ namespace Lcd
         }
 
         /**
-         * \brief   6. Set Segment Re-map: (A0H - A1H)
+         * @brief   6. Set Segment Re-map: (A0H - A1H)
          *          Change the relationship between RAM column address and segment
          *          driver. The order of segment driver output pads can be reversed by
          *          software. This allows flexible IC layout during OLED module
@@ -153,7 +153,7 @@ namespace Lcd
          *          is incremented by 1 as shown in Figure. 1.
          *          When ADC = “L”, the right rotates (normal direction). (POR)
          *          When ADC = “H”, the left rotates (reverse direction).
-         * \param   bool mirrored, POR = false
+         * @param   bool mirrored, POR = false
          */
         void reverse_cols(bool mirrored)
         {
@@ -162,13 +162,13 @@ namespace Lcd
         }
 
         /**
-         * \brief   8. Set Normal/Reverse Display: (A6H -A7H)
+         * @brief   8. Set Normal/Reverse Display: (A6H -A7H)
          *          Reverses the display ON/OFF status without rewriting the contents
          *          of the display data RAM.
          *          When D = “L”, the RAM data is high, being OLED ON potential
          *          (normal display). (POR)
          *          When D = “H”, the RAM data is low, being OLED ON potential (reverse display)
-         * \param   bool inverted, POR = false
+         * @param   bool inverted, POR = false
          */
         void inverted(bool invert)
         {
@@ -177,7 +177,7 @@ namespace Lcd
         }
 
         /**
-         * \brief   13. Set Common Output Scan Direction: (C0H - C8H)
+         * @brief   13. Set Common Output Scan Direction: (C0H - C8H)
          *          This command sets the scan direction of the common output allowing
          *          layout flexibility in OLED module design. In addition, the display
          *          will have immediate effect once this command is issued. That is,
@@ -185,7 +185,7 @@ namespace Lcd
          *          will be vertically flipped.
          *          When D = “L”, Scan from COM0 to COM [N -1]. (POR)
          *          When D = “H”, Scan from COM [N -1] to COM0.
-         * \param   bool flipped, POR = false
+         * @param   bool flipped, POR = false
          */
         void flipped(bool flipped)
         {
@@ -194,8 +194,8 @@ namespace Lcd
         }
 
         /**
-         * \brief   Write the buffer to the display RAM
-         * \param   uint8_t *buffer, pointer to the buffer, buffer must have a size
+         * @brief   Write the buffer to the display RAM
+         * @param   uint8_t *buffer, pointer to the buffer, buffer must have a size
          *                           equal to (132 * 8) bytes.
          */
         int write_screen(uint8_t *buffer)
@@ -244,14 +244,14 @@ namespace Lcd
 
     protected:
         /**
-         * \brief   1/2. Set Column Address (0x00-0x0F, 0x10-0x1F):
+         * @brief   1/2. Set Column Address (0x00-0x0F, 0x10-0x1F):
          *          Specifies column address of display RAM. Divide the column address
          *          into 4 higher bits and 4 lower bits. Set each of them into
          *          successions. When the microprocessor repeats to access to the
          *          display RAM, the column address counter is incremented during each
          *          access until address 131 is accessed. The page address is not
          *          changed during this time.
-         * \param   uint_8t column, starting the column to map to the fisrt
+         * @param   uint_8t column, starting the column to map to the fisrt
          */
         void col_start(uint8_t column)
         {
@@ -262,9 +262,9 @@ namespace Lcd
         }
 
         /**
-         * \brief   3. Set Charge Pump voltage value: (30H~33H)
+         * @brief   3. Set Charge Pump voltage value: (30H~33H)
          *          Specifies output voltage (VPP) of the internal charger pump:
-         * \param    uint8_t value, 0 = 6.4V, 1 = 7.4V, 2 = 8.0V (POR), 3 = 9.0V
+         * @param    uint8_t value, 0 = 6.4V, 1 = 7.4V, 2 = 8.0V (POR), 3 = 9.0V
          */
         void chargepump(uint8_t value)
         {
@@ -273,14 +273,14 @@ namespace Lcd
         }
 
         /**
-         * \brief   4. Set Display Start Line: (40H - 7FH)
+         * @brief   4. Set Display Start Line: (40H - 7FH)
          *          Specifies line address (refer to Figure. 8) to determine the
          *          initial display line or COM0. The RAM display data becomes the top
          *          line of OLED screen. It is followed by the higher number of lines
          *          in ascending order, corresponding to the duty cycle. When this
          *          command changes the line address, the smooth scrolling or page
          *          change takes place.
-         * \param   uint8_t line
+         * @param   uint8_t line
          */
         void start_line(uint8_t line)
         {
@@ -290,14 +290,14 @@ namespace Lcd
         }
 
         /**
-         * \brief   7. Set Entire Display OFF/ON: (A4H - A5H)
+         * @brief   7. Set Entire Display OFF/ON: (A4H - A5H)
          *          Forcibly turns the entire display on regardless of the contents of
          *          the display data RAM. At this time, the contents of the display
          *          data RAM are held. This command has priority over the
          *          normal/reverse display command.
          *          normal = true, Display reflects the contents of RAM.
          *          normal = false, All display segments are ON.
-         * \param   bool normal, POR = true
+         * @param   bool normal, POR = true
          */
         void normal_display(bool normal)
         {
@@ -305,11 +305,11 @@ namespace Lcd
         }
 
         /**
-         * \brief   9. Set Multiplex Ration: (Double Bytes Command)
+         * @brief   9. Set Multiplex Ration: (Double Bytes Command)
          *          This command switches default 64 multiplex modes to any multiplex
          *          ratio from 1 to 64. The output pads COM0-COM63 will be switched to
          *          corresponding common signal.
-         * \param   uint8_t ratio (1-64), POR = 64
+         * @param   uint8_t ratio (1-64), POR = 64
          */
         void multiplex(uint8_t ratio)
         {
@@ -320,12 +320,12 @@ namespace Lcd
         }
 
         /**
-         * \brief   12. Set Page Address: (B0H - B7H)
+         * @brief   12. Set Page Address: (B0H - B7H)
          *          Specifies page address to load display RAM data to page address
          *          register. Any RAM data bit can be accessed when its page address
          *          and column address are specified. The display remains unchanged
          *          even when the page address is changed.
-         * \param   uint8_t page (0-7)
+         * @param   uint8_t page (0-7)
          */
         void set_page_addr(uint8_t page)
         {
@@ -335,7 +335,7 @@ namespace Lcd
         }
 
         /**
-         * \brief   14. Set Display Offset: (0xD3, Double Bytes Command)
+         * @brief   14. Set Display Offset: (0xD3, Double Bytes Command)
          *          This is a double byte command. The next command specifies the
          *          mapping of display start line to one of COM0-63 (it is assumed that
          *          COM0 is the display start line, that equals to 0). For example, to
@@ -343,7 +343,7 @@ namespace Lcd
          *          data in the second byte should be given by 010000. To move in the
          *          opposite direction by 16 lines, the 6-bit data should be given by
          *          (64-16), so the second byte should be 100000.
-         * \param   uint8_t offset (0-63), POR = 0
+         * @param   uint8_t offset (0-63), POR = 0
          */
         void vert_offset(uint8_t offset)
         {
@@ -353,15 +353,15 @@ namespace Lcd
         }
 
         /**
-         * \brief   15. Set Display Clock Divide Ratio/Oscillator Frequency: (0xD5,
+         * @brief   15. Set Display Clock Divide Ratio/Oscillator Frequency: (0xD5,
          *              Double Bytes Command)
          *          This command is used to set the frequency of the internal display
          *          clocks (DCLKs). It is defined as the divide ratio (Value from 1 to
          *          16) used to divide the oscillator frequency. POR is 1. Frame
          *          frequency is determined by divide ratio, number of display clocks
          *          per row, MUX ratio and oscillator frequency.
-         * \param   uint8_t divider (1-16), POR = 1
-         * \param   uint8_t freq (0-15), 0 = -25%, 5 = 0% (POR), 15 = +50%
+         * @param   uint8_t divider (1-16), POR = 1
+         * @param   uint8_t freq (0-15), 0 = -25%, 5 = 0% (POR), 15 = +50%
          */
         void clk_div(uint8_t divider, uint8_t freq)
         {
@@ -375,11 +375,11 @@ namespace Lcd
         }
 
         /**
-         * \brief   16. Set Dis-charge/Pre-charge Period: (0xD9, Double Bytes Command)
+         * @brief   16. Set Dis-charge/Pre-charge Period: (0xD9, Double Bytes Command)
          *          This command is used to set the duration of the pre-charge period.
          *          The interval is counted in number of DCLK. POR is 2 DCLKs.
-         * \param   uint8_t discharge (1-16), POR = 2
-         * \param   uint8_t precharge (1-15), POR = 2
+         * @param   uint8_t discharge (1-16), POR = 2
+         * @param   uint8_t precharge (1-15), POR = 2
          */
         void dis_pre_charge(uint8_t discharge, uint8_t precharge)
         {
@@ -395,12 +395,12 @@ namespace Lcd
         }
 
         /**
-         * \brief   17. Set Common pads hardware configuration: (0xDA, Double Bytes
+         * @brief   17. Set Common pads hardware configuration: (0xDA, Double Bytes
          *              Command)
          *          This command is to set the common signals pad configuration
          *          (sequential or alternative) to match the OLED panel hardware
          *          layout.
-         * \param   bool sequential, POR = false
+         * @param   bool sequential, POR = false
          */
         void com_pads(bool sequential)
         {
@@ -408,7 +408,7 @@ namespace Lcd
         }
 
         /**
-         * \brief   18. Set VCOM Deselect Level: (0xDB, Double Bytes Command)
+         * @brief   18. Set VCOM Deselect Level: (0xDB, Double Bytes Command)
          *          This command is to set the common pad output voltage level at
          *          deselect stage.
          *          VCOM = β X VREF = (0.430 + A[7:0] X 0.006415) X VREF
@@ -416,7 +416,7 @@ namespace Lcd
          *          0x35 = 0.770 (POR)
          *          0x3F = 0.834
          *          0x40-0xFF = 1
-         * \param   uint8_t value, POR = 0x35
+         * @param   uint8_t value, POR = 0x35
          */
         void vcomp(uint8_t level)
         {
@@ -467,7 +467,7 @@ namespace Lcd
 
     // Not implemented:
     /**
-     * \brief   19. Read-Modify-Write: (E0H)
+     * @brief   19. Read-Modify-Write: (E0H)
      *          A pair of Read-Modify-Write and End commands must always be used.
      *          Once read-modify-write is issued, column address is not incremental
      *          by read display data command but incremental by write display data
@@ -479,13 +479,13 @@ namespace Lcd
      */
 
     /**
-     * \brief  20. End: (EEH)
+     * @brief  20. End: (EEH)
      *         Cancels Read-Modify-Write mode and returns column address to the
      *         original address (when Read-Modify-Write is issued.)
      */
 
     /**
-     * \brief   21. NOP: (E3H)
+     * @brief   21. NOP: (E3H)
      *          Non-Operation Command.
      */
 

@@ -6,6 +6,13 @@
 
 namespace I2C
 {
+    /// @brief  Interface for I2C communication.
+    /// @details This interface defines the methods required for I2C communication.
+    ///         It is designed to be used with a derived class that implements the actual
+    ///         I2C communication logic. The CRTP (Curiously Recurring Template Pattern)
+    ///         is used to allow the derived class to implement the methods without
+    ///         needing to know the details of the base class.
+    /// @tparam Derived The derived class that implements the I2C communication logic.
     template <typename Derived>
     class I2CInterface
     {

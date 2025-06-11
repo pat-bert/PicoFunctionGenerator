@@ -2,12 +2,10 @@
 #define MCP4725_INCLUDED_HPP
 
 // Libraries
-#include <stdio.h> // optional for printf debug error messages
 #include "pico/stdlib.h"
 
 namespace Dac
 {
-
 	template <typename I2CInterface>
 	class MCP4725
 	{

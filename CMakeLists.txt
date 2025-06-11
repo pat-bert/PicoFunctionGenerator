@@ -39,6 +39,8 @@ pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/i2c/i2c.pio)
 
 # Add executable. Default name is the project name, version 0.1
 target_sources(${PROJECT_NAME} PRIVATE
+    drivers/mcp4725.hpp
+    drivers/sh1106.hpp
     i2c/i2c_dma.c
     i2c/i2c_dma.h
     i2c/i2c_interface.hpp
@@ -52,8 +54,6 @@ target_sources(${PROJECT_NAME} PRIVATE
     hal.hpp
     lv_conf.h
     main.cpp
-    mcp4725.hpp
-    sh1106.hpp
     waveform_data.hpp
 )
 

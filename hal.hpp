@@ -3,8 +3,8 @@
 
 #include "i2c/i2c_pico.hpp"
 
-#include "mcp4725.hpp"
-#include "sh1106.hpp"
+#include "drivers/mcp4725.hpp"
+#include "drivers/sh1106.hpp"
 
 using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
 using DacInterfaceDriverType = I2C::I2CPicoHw;

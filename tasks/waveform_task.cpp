@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 #include <variant>
 
 namespace Waveform
@@ -31,14 +32,14 @@ namespace Waveform
             i2cDrivers[i] = DacInterfaceDriverType{i2c_get_instance(i), i2cSpeedKHz, sdaDacs[i], sclDacs[i]};
             if (!i2cDrivers[i].init())
             {
-                printf("I2C driver %zu initialization failed\n", i);
+                std::cout << "Failed to initialize I2C driver for DAC " << i << std::endl;
                 return;
             }
 
             dacArray[i] = DacDriverType{&(i2cDrivers[i]), DacDriverType::I2CAddr::VariantA0_PinA00};
             if (!dacArray[i].isConnected())
             {
-                printf("DAC %zu is not connected\n", i);
+                std::cout << "Failed to connect to DAC " << i << std::endl;
                 return;
             }
 
@@ -66,7 +67,7 @@ namespace Waveform
 
                 if (!arg.m_enabled)
                 {
-                    printf("Disabling channel %d\n", arg.m_channel);
+                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
                     dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                     return;
                 }
@@ -79,7 +80,7 @@ namespace Waveform
 
                 if (!arg.m_enabled)
                 {
-                    printf("Disabling channel %d\n", arg.m_channel);
+                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
                     dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                     return;
                 }
@@ -112,7 +113,7 @@ namespace Waveform
 
                 if (!arg.m_enabled)
                 {
-                    printf("Disabling channel %d\n", arg.m_channel);
+                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
                     dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
                     return;
                 }

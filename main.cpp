@@ -14,7 +14,7 @@ int main()
     sleep_ms(2000); // wait for USB serial to be ready
 
     std::cout << "Starting Pico Waveform Generator..." << std::endl;
-    multicore_launch_core1(Ui::ui_task);
+    multicore_launch_core1(Ui::run_task_wrapper);
 
-    Waveform::waveform_task();
+    Waveform::run_task_wrapper();
 }

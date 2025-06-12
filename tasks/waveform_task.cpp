@@ -1,22 +1,20 @@
 #include "waveform_task.hpp"
 
-// Own includes
-#include "hal.hpp"
-#include "waveform_data.hpp"
-
-// Pico SDK includes
-#include "hardware/pwm.h"
-
-// Std C++ includes
-#include <array>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <variant>
-#include <functional>
 
 namespace Waveform
 {
+    void WaveformVisitor::operator()(const RectangleData &arg) const
+    {
+        // Find out which PWM slice is connected to GPIO
+        uint slice_num = m_pwmSlices[arg.getChannel()];
+        pwm_set_freq_duty(slice_num, PWM_CHAN_A, arg.getFrequency(), arg.getDutyCycle());
+        pwm_set_enabled(slice_num, arg.isEnabled());
+    }
+
     void waveform_task()
     {
         constexpr uint8_t numberOfChannels{2U};
@@ -52,7 +50,7 @@ namespace Waveform
 
         std::array<ChannelData, 2> waveFormDataArray{
             SawtoothData{true, 0U, 500U, 4095U, true},
-            TriangleData{true, 1U, 500U, 4095U}};
+            SineData{true, 1U, 500U, 2048U}};
 
         WaveformVisitor visitor{dacArray, pwmSlices};
 

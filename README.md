@@ -8,8 +8,9 @@ This project aims to create an entry-level function generator based on the Raspb
 - Supported waveforms:
   - Constant voltage
   - Rectangle: Configurable frequency and duty cycle
-  - Sawtooth: Configurable amplitude and direction
-  - Triangle: Configurable amplitude
+  - Sawtooth: Configurable frequency, amplitude and direction
+  - Triangle: Configurable frequency and amplitude
+  - Sine: Configurable frequency and amplitude
 
 ## Details
 

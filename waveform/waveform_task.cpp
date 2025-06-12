@@ -1,4 +1,5 @@
 #include "waveform_task.hpp"
+#include "waveform_visitor.hpp"
 
 #include <cmath>
 #include <cstring>
@@ -7,14 +8,6 @@
 
 namespace Waveform
 {
-    void WaveformVisitor::operator()(const RectangleData &arg) const
-    {
-        // Find out which PWM slice is connected to GPIO
-        uint slice_num = m_pwmSlices[arg.getChannel()];
-        pwm_set_freq_duty(slice_num, PWM_CHAN_A, arg.getFrequency(), arg.getDutyCycle());
-        pwm_set_enabled(slice_num, arg.isEnabled());
-    }
-
     void waveform_task()
     {
         constexpr uint8_t numberOfChannels{2U};
@@ -24,7 +17,7 @@ namespace Waveform
         std::array<DacInterfaceDriverType, numberOfChannels> i2cDrivers{};
         std::array<DacDriverType, numberOfChannels> dacArray{};
         std::array<uint, numberOfChannels> pwmPins{pwm0, pwm1};
-        std::array<uint, numberOfChannels> pwmSlices{};
+        std::array<WaveformVisitor, numberOfChannels> visitors{};
 
         for (size_t i = 0; i < numberOfChannels; ++i)
         {
@@ -45,20 +38,20 @@ namespace Waveform
             dacArray[i].setInputCode(0, DacDriverType::CmdType::EEPROM_Mode, DacDriverType::PowerMode::Off_500kOhm);
 
             gpio_set_function(pwmPins[i], GPIO_FUNC_PWM);
-            pwmSlices[i] = pwm_gpio_to_slice_num(pwmPins[i]);
+            uint pwmSlice = pwm_gpio_to_slice_num(pwmPins[i]);
+
+            visitors[i] = WaveformVisitor{&dacArray[i], pwmSlice};
         }
 
-        std::array<ChannelData, 2> waveFormDataArray{
-            SawtoothData{true, 0U, 500U, 4095U, true},
-            SineData{true, 1U, 500U, 2048U}};
-
-        WaveformVisitor visitor{dacArray, pwmSlices};
+        std::array<ChannelData, numberOfChannels> waveFormDataArray{
+            SawtoothData{true, 1000U, 4095U, true},
+            TriangleData{true, 500U, 2048U}};
 
         while (true)
         {
-            for (auto &waveFormData : waveFormDataArray)
+            for (int i = 0; i < numberOfChannels; ++i)
             {
-                std::visit(visitor, waveFormData);
+                std::visit(visitors[i], waveFormDataArray[i]);
             }
         }
     }

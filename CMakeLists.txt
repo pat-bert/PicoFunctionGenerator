@@ -48,14 +48,16 @@ target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
     i2c/pio_i2c.h
-    tasks/waveform_task.cpp
-    tasks/waveform_task.hpp
     tasks/ui_task.cpp
     tasks/ui_task.hpp
+    waveform/waveform_data.hpp
+    waveform/waveform_task.cpp
+    waveform/waveform_task.hpp
+    waveform/waveform_visitor.cpp
+    waveform/waveform_visitor.hpp
     hal.hpp
     lv_conf.h
     main.cpp
-    waveform_data.hpp
 )
 
 add_subdirectory(lvgl)

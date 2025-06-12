@@ -1,6 +1,6 @@
 // Own includes
 #include "tasks/ui_task.hpp"
-#include "tasks/waveform_task.hpp"
+#include "waveform/waveform_task.hpp"
 
 // Pico SDK includes
 #include "pico/multicore.h"

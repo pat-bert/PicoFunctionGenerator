@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <variant>
+#include <functional>
 
 namespace Waveform
 {
@@ -49,108 +50,17 @@ namespace Waveform
             pwmSlices[i] = pwm_gpio_to_slice_num(pwmPins[i]);
         }
 
-        std::array<ChannelData, numberOfChannels> waveFormDataArray{
+        std::array<ChannelData, 2> waveFormDataArray{
             SawtoothData{true, 0U, 500U, 4095U, true},
             TriangleData{true, 1U, 500U, 4095U}};
 
-        const overloaded setupVisitor{
-            [&pwmSlices](const RectangleData &arg)
-            {
-                // Find out which PWM slice is connected to GPIO
-                uint slice_num = pwmSlices[arg.m_channel];
-                pwm_set_freq_duty(slice_num, PWM_CHAN_A, arg.m_frequency, arg.m_dutyCycle);
-                pwm_set_enabled(slice_num, arg.m_enabled);
-            },
-            [&dacArray](const ConstantData &arg)
-            {
-                auto &dac = dacArray[arg.m_channel];
-
-                if (!arg.m_enabled)
-                {
-                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
-                    dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
-                    return;
-                }
-
-                dac.setInputCode(arg.m_amplitude, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
-            },
-            [&dacArray](SawtoothData &arg)
-            {
-                auto &dac = dacArray[arg.m_channel];
-
-                if (!arg.m_enabled)
-                {
-                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
-                    dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
-                    return;
-                }
-
-                // 29 Bits per I2C transfer, transfer speed is 400KHz, maximum 4096 steps per period
-                // 400000 / (29 * 4096) = 2.4Hz
-                // 29 / 400 kHz = 0.0000725 sec
-                int16_t stepCount = i2cSpeedKHz * 1000 / (35 * arg.m_frequency);
-                int16_t step = arg.m_amplitude / (stepCount - 1);
-
-                if (arg.m_inc)
-                {
-                    dac.setInputCode(arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
-                }
-                else
-                {
-                    dac.setInputCode(arg.m_amplitude - arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
-                }
-
-                // Update counter for next step
-                arg.m_counter += step;
-                if (arg.m_counter >= arg.m_amplitude)
-                {
-                    arg.m_counter = 0;
-                }
-            },
-            [&dacArray](TriangleData &arg)
-            {
-                auto &dac = dacArray[arg.m_channel];
-
-                if (!arg.m_enabled)
-                {
-                    std::cout << "Disabling channel " << arg.m_channel << std::endl;
-                    dac.setInputCode(0, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::Off_500kOhm);
-                    return;
-                }
-
-                // 29 Bits per I2C transfer, transfer speed is 400KHz, maximum 4096 steps per period
-                // 400000 / (29 * 4096) = 2.4Hz
-                // 29 / 400 kHz = 0.0000725 sec
-                int16_t stepCount = i2cSpeedKHz * 1000 / (35 * arg.m_frequency);
-                int16_t step = 2 * arg.m_amplitude / (stepCount - 1);
-
-                dac.setInputCode(arg.m_counter, DacDriverType::CmdType::FastMode, DacDriverType::PowerMode::On);
-                if (arg.m_inc)
-                {
-                    arg.m_counter += step;
-                    if (arg.m_counter >= arg.m_amplitude)
-                    {
-                        arg.m_inc = false;
-                        arg.m_counter = arg.m_amplitude;
-                    }
-                }
-                else
-                {
-                    arg.m_counter -= step;
-                    if (arg.m_counter <= 0)
-                    {
-                        arg.m_inc = true;
-                        arg.m_counter = 0;
-                    }
-                }
-            },
-            [&dacArray](const SineData &arg) {}};
+        WaveformVisitor visitor{dacArray, pwmSlices};
 
         while (true)
         {
             for (auto &waveFormData : waveFormDataArray)
             {
-                std::visit(setupVisitor, waveFormData);
+                std::visit(visitor, waveFormData);
             }
         }
     }

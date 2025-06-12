@@ -34,6 +34,10 @@ namespace I2C
         {
             gpio_set_function(m_sda, GPIO_FUNC_I2C);
             gpio_set_function(m_scl, GPIO_FUNC_I2C);
+            gpio_set_slew_rate(m_sda, GPIO_SLEW_RATE_SLOW);
+            gpio_set_slew_rate(m_scl, GPIO_SLEW_RATE_SLOW);
+            gpio_set_input_hysteresis_enabled(m_sda, true);
+            gpio_set_input_hysteresis_enabled(m_scl, true);
             i2c_init(m_port, m_baudrate * 1000);
             return true;
         }
@@ -54,9 +58,11 @@ namespace I2C
         /// @param addr The I2C address to write to
         /// @param data Pointer to the data to write
         /// @param length The number of bytes to write
+        /// @param blocking If true, the function will block until the write is complete
         /// @return The number of bytes written, or a negative error code on failure
-        int writeImpl(uint8_t addr, const uint8_t *data, size_t length)
+        int writeImpl(uint8_t addr, const uint8_t *data, size_t length, bool blocking)
         {
+            assert(blocking); // Ensure that blocking is true for this implementation
             return i2c_write_blocking(m_port, addr, data, length, false);
         }
 
@@ -65,9 +71,11 @@ namespace I2C
         /// @param addr The I2C address to read from
         /// @param data Pointer to the buffer to store the read data
         /// @param length The number of bytes to read
+        /// @param blocking If true, the function will block until the read is complete
         /// @return The number of bytes read, or a negative error code on failure
-        int readImpl(uint8_t addr, uint8_t *data, size_t length)
+        int readImpl(uint8_t addr, uint8_t *data, size_t length, bool blocking)
         {
+            assert(blocking); // Ensure that blocking is true for this implementation
             return i2c_read_blocking(m_port, addr, data, length, false);
         }
 
@@ -97,26 +105,16 @@ namespace I2C
             return true;
         }
 
-        int writeImpl(uint8_t addr, const uint8_t *data, size_t length)
+        int writeImpl(uint8_t addr, const uint8_t *data, size_t length, bool blocking)
         {
-            int errorCode = i2c_dma_write(m_i2cDma, addr, data, length);
-            if (errorCode == 0)
-            {
-                return length; /// Return number of bytes written
-            }
-
-            return 0;
+            int result = i2c_dma_write(m_i2cDma, addr, data, length, blocking);
+            return (result == 0) ? length : result;
         }
 
-        int readImpl(uint8_t addr, uint8_t *data, size_t length)
+        int readImpl(uint8_t addr, uint8_t *data, size_t length, bool blocking)
         {
-            int errorCode = i2c_dma_read(m_i2cDma, addr, data, length);
-            if (errorCode == 0)
-            {
-                return length; /// Return number of bytes read
-            }
-
-            return 0;
+            int result = i2c_dma_read(m_i2cDma, addr, data, length);
+            return (result == 0) ? length : result;
         }
 
     private:
@@ -127,46 +125,66 @@ namespace I2C
         uint m_scl;          /// SCL GPIO pin
     };
 
+    /// Implementation of I2CInterface for Raspberry Pi Pico using PIO
+    /// This class uses the PIO peripheral to implement I2C communication.
+    /// It requires the PIO program to be loaded and initialized.
     class I2CPicoPIO : public I2CInterface<I2CPicoPIO>
     {
     public:
-        /// SCL must be SDA + 1 (for wait mapping)
+        /// @brief Constructor that initializes the PIO instance, state machine, and GPIO pins for SDA and SCL
+        /// @param pio PIO instance (e.g., pio0 or pio1)
+        /// @param sm State machine number (0 or 1)
+        /// @param sda GPIO pin number for SDA
+        /// @param scl GPIO pin number for SCL
         I2CPicoPIO(PIO pio, uint sm, uint sda, uint scl) : m_pio(pio), m_sm(sm), m_sda(sda), m_scl(scl)
         {
             assert(scl == sda + 1);
         }
 
+        /// @brief Initialize the I2C interface using PIO
+        /// @details This function adds the I2C program to the PIO instance and initializes it with the specified SDA and SCL pins.
+        /// It also sets up the state machine for I2C communication.
+        /// @return true if initialization was successful, false otherwise
         bool initImpl()
         {
             m_pioProgramOffset = pio_add_program(m_pio, &i2c_program);
             i2c_program_init(m_pio, m_sm, m_pioProgramOffset, m_sda, m_scl);
-            return true;
+            return m_pioProgramOffset >= 0;
         }
 
+        /// @brief Deinitialize the I2C interface using PIO
+        /// @details This function removes the I2C program from the PIO instance and unclaims the state machine.
+        /// @return true if deinitialization was successful, false otherwise
         bool deinitImpl()
         {
             pio_remove_program_and_unclaim_sm(&i2c_program, m_pio, m_sm, m_pioProgramOffset);
             return true;
         }
 
-        int writeImpl(uint8_t addr, const uint8_t *data, size_t length)
+        /// @brief Write data to the specified I2C address using PIO
+        /// @details This function uses the PIO I2C write blocking function to write data to the I2C bus.
+        /// @param addr The I2C address to write to
+        /// @param data Pointer to the data to write
+        /// @param length The number of bytes to write
+        /// @return The number of bytes written, or a negative error code on failure
+        int writeImpl(uint8_t addr, const uint8_t *data, size_t length, bool blocking)
         {
+            assert(blocking); // Ensure that blocking is true for this implementation
             int result = pio_i2c_write_blocking(m_pio, m_sm, addr, const_cast<uint8_t *>(data), length);
-            if (result == 0)
-            {
-                return length; /// Return number of bytes written
-            }
-            return 0; /// Return error code
+            return (result == 0) ? length : result;
         }
 
-        int readImpl(uint8_t addr, uint8_t *data, size_t length)
+        /// @brief Read data from the specified I2C address using PIO
+        /// @details This function uses the PIO I2C read blocking function to read data from the I2C bus.
+        /// @param addr The I2C address to read from
+        /// @param data Pointer to the buffer to store the read data
+        /// @param length The number of bytes to read
+        /// @return The number of bytes read, or a negative error code on failure
+        int readImpl(uint8_t addr, uint8_t *data, size_t length, bool blocking)
         {
+            assert(blocking); // Ensure that blocking is true for this implementation
             int result = pio_i2c_read_blocking(m_pio, m_sm, addr, data, length);
-            if (result == 0)
-            {
-                return length; /// Return number of bytes read
-            }
-            return 0; /// Return error code
+            return (result == 0) ? length : result;
         }
 
     private:

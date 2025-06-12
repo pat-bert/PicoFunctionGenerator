@@ -7,7 +7,7 @@
 #include "drivers/sh1106.hpp"
 
 using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
-using DacInterfaceDriverType = I2C::I2CPicoHw;
+using DacInterfaceDriverType = I2C::I2CPicoHwDma;
 using DacDriverType = Dac::MCP4725<DacInterfaceDriverType>;
 
 constexpr uint pwm0{0U};

@@ -41,10 +41,11 @@ namespace I2C
         /// @param  addr   The I2C address to write to.
         /// @param  data   Pointer to the data to write.
         /// @param  length The number of bytes to write.
+        /// @param  blocking If true, the method will block until the write is complete.
         /// @return The number of bytes written, or a negative error code on failure.
-        int write(uint8_t addr, const uint8_t *data, size_t length)
+        int write(uint8_t addr, const uint8_t *data, size_t length, bool blocking = true)
         {
-            return static_cast<Derived *>(this)->writeImpl(addr, data, length);
+            return static_cast<Derived *>(this)->writeImpl(addr, data, length, blocking);
         }
 
         /// @brief  Reads data from the specified I2C address.
@@ -53,10 +54,11 @@ namespace I2C
         /// @param  addr   The I2C address to read from.
         /// @param  data   Pointer to the buffer to store the read data.
         /// @param  length The number of bytes to read.
+        /// @param  blocking If true, the method will block until the read is complete.
         /// @return The number of bytes read, or a negative error code on failure.
-        int read(uint8_t addr, uint8_t *data, size_t length)
+        int read(uint8_t addr, uint8_t *data, size_t length, bool blocking = true)
         {
-            return static_cast<Derived *>(this)->readImpl(addr, data, length);
+            return static_cast<Derived *>(this)->readImpl(addr, data, length, blocking);
         }
     };
 }

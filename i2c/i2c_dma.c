@@ -6,6 +6,9 @@
 #include "pico/sem.h"
 #include "i2c_dma.h"
 
+#include <math.h>
+#include <stdio.h>
+
 #define I2C_MAX_TRANSFER_SIZE 1056
 // A transfer timeout of 1000ms will allow a 10000 bit transfer to complete
 // successfully without timeouts at baudrates as low as 10000 baud.
@@ -259,7 +262,8 @@ static int i2c_dma_write_read_internal(
     const uint8_t *wbuf,
     size_t wbuf_len,
     uint8_t *rbuf,
-    size_t rbuf_len)
+    size_t rbuf_len,
+    bool blocking)
 {
   if (
       (wbuf_len > 0 && wbuf == NULL) ||
@@ -332,6 +336,11 @@ static int i2c_dma_write_read_internal(
   i2c_dma_tx_channel_configure(
       i2c_dma->i2c, tx_chan, i2c_dma->data_cmds, wbuf_len + rbuf_len);
 
+  if (blocking)
+  {
+    dma_channel_wait_for_finish_blocking(tx_chan);
+  }
+
   // The I2C transfer via DMA has been started. Wait for it to complete. Under
   // normal circumstances, the transfer is complete when a stop is detected on
   // the bus. If the hardware detects problems during the transfer, there will
@@ -383,7 +392,8 @@ int i2c_dma_write_read(
     const uint8_t *wbuf,
     size_t wbuf_len,
     uint8_t *rbuf,
-    size_t rbuf_len)
+    size_t rbuf_len,
+    bool blocking)
 {
   if (!mutex_enter_timeout_ms(&(i2c_dma->mutex), I2C_TAKE_MUTEX_TIMEOUT_MS))
   {
@@ -391,7 +401,7 @@ int i2c_dma_write_read(
   }
 
   const int rc = i2c_dma_write_read_internal(
-      i2c_dma, addr, wbuf, wbuf_len, rbuf, rbuf_len);
+      i2c_dma, addr, wbuf, wbuf_len, rbuf, rbuf_len, blocking);
 
   mutex_exit(&(i2c_dma->mutex));
 

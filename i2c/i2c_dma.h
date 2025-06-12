@@ -83,7 +83,8 @@ int i2c_dma_write_read(
   const uint8_t *wbuf, // Pointer to block of bytes to write or NULL
   size_t wbuf_len,     // Length of block of bytes to write or 0
   uint8_t *rbuf,       // Pointer to block of bytes for data read or NULL
-  size_t rbuf_len      // Number of bytes of data to read or 0
+  size_t rbuf_len,      // Number of bytes of data to read or 0
+  bool blocking
 );
 
 // Writes a block of bytes.
@@ -109,9 +110,10 @@ static inline int i2c_dma_write(
   i2c_dma_t *i2c_dma,  // i2c_dma_t pointer for I2C0 or I2C1
   uint8_t addr,        // 7 bit I2C address
   const uint8_t *wbuf, // Pointer to block of bytes to write or NULL
-  size_t wbuf_len      // Length of block of bytes to write or 0
+  size_t wbuf_len,     // Length of block of bytes to write or 0
+  bool blocking
 ) {
-  return i2c_dma_write_read(i2c_dma, addr, wbuf, wbuf_len, NULL, 0);
+  return i2c_dma_write_read(i2c_dma, addr, wbuf, wbuf_len, NULL, 0, blocking);
 }
 
 // Reads a block of bytes.
@@ -139,184 +141,7 @@ static inline int i2c_dma_read(
   uint8_t *rbuf,      // Pointer to block of bytes for data read or NULL
   size_t rbuf_len     // Number of bytes of data to read or 0
 ) {
-  return i2c_dma_write_read(i2c_dma, addr, NULL, 0, rbuf, rbuf_len);
-}
-
-// Writes a byte to a register.
-// 
-// I2C Transaction:
-// S addr Wr [A] reg [A] byte [A] P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_write_byte(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to write to
-  uint8_t byte        // Byte to write
-) {
-  const uint8_t wbuf[2] = {reg, byte};
-  return i2c_dma_write_read(i2c_dma, addr, wbuf, 2, NULL, 0);
-}
-
-// Reads a byte from a register.
-// 
-// I2C Transaction:
-// S addr Wr [A] reg [A] Sr addr Rd [A] [byte] NA P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_read_byte(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to read from
-  uint8_t *byte       // Pointer to the byte for the data read
-) {
-  return i2c_dma_write_read(i2c_dma, addr, &reg, 1, byte, 1);
-}
-
-// Writes a 16-bit word to a register. The least significant byte is sent
-// over the wire first.
-//
-// I2C Transaction:
-// S addr Wr [A] reg [A] word lsb [A] word msb [A] P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_write_word(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to write to
-  uint16_t word       // 16-bit word to write
-) {
-  const uint8_t wbuf[3] = {reg, word & 0xff, word >> 8};
-  return i2c_dma_write_read(i2c_dma, addr, wbuf, 3, NULL, 0);
-}
-
-// Reads a 16-bit word from a register. The least significant byte is received
-// over the wire first.
-//
-// I2C Transaction:
-// S addr Wr [A] reg [A] Sr addr Rd [A] [word lsb] A [word msb] NA P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_read_word(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to read from
-  uint16_t *word      // Pointer to the 16-bit word for the data read
-) {
-  return i2c_dma_write_read(i2c_dma, addr, &reg, 1, (uint8_t *) word, 2);
-}
-
-// Writes a 16-bit word to a register. The most significant byte is sent
-// over the wire first.
-//
-// I2C Transaction:
-// S addr Wr [A] reg [A] word msb [A] word lsb [A] P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_write_word_swapped(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to write to
-  uint16_t word       // 16-bit word to write
-) {
-  const uint8_t wbuf[3] = {reg, word >> 8, word & 0xff};
-  return i2c_dma_write_read(i2c_dma, addr, wbuf, 3, NULL, 0);
-}
-
-// Reads a 16-bit word from a register. The most significant byte is received
-// over the wire first.
-//
-// I2C Transaction:
-// S addr Wr [A] reg [A] Sr addr Rd [A] [word msb] A [word lsb] NA P
-//
-// Returns
-//   PICO_OK
-//     Function completed successfully
-//   PICO_ERROR_INVALID_ARG
-//     Invalid argument passed to function
-//   PICO_ERROR_TIMEOUT
-//     Timeout waiting to take a mutex
-//     Timeout waiting for I2C transaction to complete
-//   PICO_ERROR_IO
-//     I2C transaction aborted by I2C peripheral
-//     No stop condition for transaction detected by I2C peripheral
-//   PICO_ERROR_GENERIC
-//     Error attempting to give a mutex
-//     Error attemptimg to claim a DMA channel
-static inline int i2c_dma_read_word_swapped(
-  i2c_dma_t *i2c_dma, // i2c_dma_t pointer for I2C0 or I2C1
-  uint8_t addr,       // 7 bit I2C address
-  uint8_t reg,        // Number of the register to read from
-  uint16_t *word      // Pointer to the 16-bit word for the data read
-) {
-  int rc = i2c_dma_write_read(i2c_dma, addr, &reg, 1, (uint8_t *) word, 2);
-  *word = *word << 8 | *word >> 8;
-  return rc;
+  return i2c_dma_write_read(i2c_dma, addr, NULL, 0, rbuf, rbuf_len, false);
 }
 
 #ifdef __cplusplus

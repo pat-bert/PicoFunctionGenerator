@@ -155,6 +155,22 @@ namespace Dac
 			return writeCommand(inputCode, mode, powerType);
 		}
 
+		bool setLinear(uint16_t start, uint16_t increment, uint16_t count)
+		{
+			uint8_t dataBuffer[120];
+
+			uint16_t inputCode{start};
+			for (uint16_t i = 0; i < count; ++i)
+			{
+				uint8_t lowByte = static_cast<uint8_t>(inputCode & 0x00FF);
+				uint8_t highByte = static_cast<uint8_t>((inputCode >> 8) & 0x00FF);
+				dataBuffer[2 * i] = static_cast<uint8_t>(CmdType::FastMode) | (static_cast<uint8_t>(PowerMode::On) << 4) | highByte; // C2,C1,PD1,PD0,D11,D10,D9,D8
+				dataBuffer[2 * i + 1] = lowByte;																					 // D7,D6,D5,D4,D3,D2,D1,D0
+				inputCode += increment;
+			}
+			return (m_interface->write(static_cast<uint8_t>(m_addr), dataBuffer, 2 * count) >= 0);
+		}
+
 		/*!
 			@brief Get current DAC InputCode from DAC register
 			@return  DAC InputCode :or 0xFFFF if I2C error

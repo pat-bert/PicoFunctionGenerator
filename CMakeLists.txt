@@ -44,6 +44,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_dma.c
     i2c/i2c_dma.h
     i2c/i2c_interface.hpp
+    i2c/i2c_pico.cpp
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
     i2c/pio_i2c.h

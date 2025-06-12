@@ -7,7 +7,7 @@
 #include "drivers/sh1106.hpp"
 
 using DisplayDriverType = Lcd::SH1106_128x64<I2C::I2CPicoPIO>;
-using DacInterfaceDriverType = I2C::I2CPicoHwDma;
+using DacInterfaceDriverType = I2C::I2CPicoHw;
 using DacDriverType = Dac::MCP4725<DacInterfaceDriverType>;
 
 constexpr uint pwm0{0U};
@@ -24,5 +24,7 @@ constexpr uint adc1{27U};
 constexpr uint pioStatemachineDisplay{0U};
 
 constexpr uint16_t i2cSpeedKHz{1000U};
+
+constexpr uint8_t bitsPerVoltageCommand{18U}; // 16 Bits for 12-Bit voltage and mode + 2x ACK, adress becomes neglibile in continuous transfer
 
 #endif

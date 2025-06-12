@@ -30,41 +30,24 @@ namespace I2C
         /// @brief Initialize the I2C interface
         /// @details This function sets the GPIO functions for SDA and SCL to I2C and initializes the I2C port with the specified baudrate
         /// @return true if initialization was successful, false otherwise
-        bool initImpl()
-        {
-            gpio_set_function(m_sda, GPIO_FUNC_I2C);
-            gpio_set_function(m_scl, GPIO_FUNC_I2C);
-            gpio_set_slew_rate(m_sda, GPIO_SLEW_RATE_SLOW);
-            gpio_set_slew_rate(m_scl, GPIO_SLEW_RATE_SLOW);
-            gpio_set_input_hysteresis_enabled(m_sda, true);
-            gpio_set_input_hysteresis_enabled(m_scl, true);
-            i2c_init(m_port, m_baudrate * 1000);
-            return true;
-        }
+        bool initImpl();
 
         /// @brief Deinitialize the I2C interface
         /// @details This function sets the GPIO functions for SDA and SCL to NULL
         /// @return true if deinitialization was successful, false otherwise
-        bool deinitImpl()
-        {
-            i2c_deinit(m_port);
-            gpio_set_function(m_sda, GPIO_FUNC_NULL);
-            gpio_set_function(m_scl, GPIO_FUNC_NULL);
-            return true;
-        }
+        bool deinitImpl();
 
         /// @brief Write data to the specified I2C address
-        /// @details This function uses the i2c_write_blocking function to write data to the I2C bus.
+        /// @details This function is blocking but uses the full TX FIFO to write data to the I2C bus.
+        /// If the requested transfer is targetting the same device as the last transfer,
+        /// it will wait until the TX FIFO has enough space for the requested length.
+        /// Otherwise, it will wait until the TX FIFO is empty before writing the data.
         /// @param addr The I2C address to write to
         /// @param data Pointer to the data to write
         /// @param length The number of bytes to write
         /// @param blocking If true, the function will block until the write is complete
         /// @return The number of bytes written, or a negative error code on failure
-        int writeImpl(uint8_t addr, const uint8_t *data, size_t length, bool blocking)
-        {
-            assert(blocking); // Ensure that blocking is true for this implementation
-            return i2c_write_blocking(m_port, addr, data, length, false);
-        }
+        int writeImpl(uint8_t addr, const uint8_t *data, size_t length, bool blocking);
 
         /// @brief Read data from the specified I2C address
         /// @details This function uses the i2c_read_blocking function to read data from the I2C bus.
@@ -73,11 +56,7 @@ namespace I2C
         /// @param length The number of bytes to read
         /// @param blocking If true, the function will block until the read is complete
         /// @return The number of bytes read, or a negative error code on failure
-        int readImpl(uint8_t addr, uint8_t *data, size_t length, bool blocking)
-        {
-            assert(blocking); // Ensure that blocking is true for this implementation
-            return i2c_read_blocking(m_port, addr, data, length, false);
-        }
+        int readImpl(uint8_t addr, uint8_t *data, size_t length, bool blocking);
 
     private:
         i2c_inst_t *m_port; /// I2C port instance

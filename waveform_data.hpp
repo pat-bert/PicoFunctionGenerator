@@ -110,8 +110,9 @@ public:
         : AnalogWaveformData<SawtoothData>(enabled, channel, amplitude), m_frequency(frequency), m_inc{inc}
     {
         m_counter = inc ? 0 : amplitude; // Initialize counter based on increasing or decreasing
-        int16_t stepCount = i2cSpeedKHz * 1000 / (35 * m_frequency);
+        int16_t stepCount = i2cSpeedKHz * 1000 / (bitsPerVoltageCommand * m_frequency);
         m_step = getAmplitude() / (stepCount - 1);
+        assert(m_step > 0); // Ensure step is positive
     }
 
     uint16_t nextImpl()
@@ -152,8 +153,9 @@ public:
         // 29 Bits per I2C transfer, transfer speed is 400KHz, maximum 4096 steps per period
         // 400000 / (29 * 4096) = 2.4Hz
         // 29 / 400 kHz = 0.0000725 sec
-        int16_t stepCount = i2cSpeedKHz * 1000 / (35 * m_frequency);
+        int16_t stepCount = i2cSpeedKHz * 1000 / (bitsPerVoltageCommand * m_frequency);
         m_step = 2 * getAmplitude() / (stepCount - 1);
+        assert(m_step > 0); // Ensure step is positive
     }
 
     uint16_t nextImpl()
@@ -193,8 +195,9 @@ public:
     explicit SineData(bool enabled, uint8_t channel, uint32_t frequency, uint16_t amplitude)
         : AnalogWaveformData<SineData>(enabled, channel, amplitude), m_frequency(frequency)
     {
-        int16_t stepCount = i2cSpeedKHz * 1000 / (35 * m_frequency);
+        int16_t stepCount = i2cSpeedKHz * 1000 / (bitsPerVoltageCommand * m_frequency);
         m_step = 360 / (stepCount - 1);
+        assert(m_step > 0); // Ensure step is positive
     }
 
     uint16_t nextImpl()

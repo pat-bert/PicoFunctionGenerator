@@ -2,7 +2,9 @@
 #define WAVEFORM_VISITOR_HPP_INCLUDED
 
 #include "hal.hpp"
-#include "waveform_data.hpp"
+#include "monostate_visitor.hpp"
+
+#include "waveform/waveform_data.hpp"
 
 #include <iostream>
 
@@ -13,9 +15,11 @@ namespace Waveform
     /// @brief Visitor class for handling different waveform data types
     /// @details This class implements the visitor pattern to process different waveform data types.
     ///          Currently, there are overrides for RectangleData and AnalogWaveformData.
-    class WaveformVisitor
+    class WaveformVisitor : public MonostateVisitor
     {
     public:
+        using MonostateVisitor::operator();
+
         WaveformVisitor() = default;
 
         /// @brief Constructor that initializes the visitor with a DAC driver and PWM slice

@@ -42,9 +42,7 @@ namespace Waveform
 
     void Task::run()
     {
-        std::array<ChannelData, numberOfChannels> waveFormDataArray{
-            SawtoothData{true, 1000U, 4095U, true},
-            TriangleData{true, 500U, 2048U}};
+        std::array<ChannelData, numberOfChannels> waveFormDataArray{};
 
         while (true)
         {

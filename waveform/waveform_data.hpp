@@ -218,7 +218,7 @@ namespace Waveform
         uint32_t m_frequency{1000U}; // Frequency in Hz, default 1kHz
     };
 
-    using ChannelData = std::variant<RectangleData, SawtoothData, TriangleData, SineData>;
+    using ChannelData = std::variant<std::monostate, RectangleData, SawtoothData, TriangleData, SineData>;
 }
 
 #endif

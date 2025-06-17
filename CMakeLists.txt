@@ -61,6 +61,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     hal.hpp
     lv_conf.h
     main.cpp
+    monostate_visitor.hpp
 )
 
 add_subdirectory(lvgl)

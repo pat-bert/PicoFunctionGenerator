@@ -1,12 +1,16 @@
 #ifndef UI_VISITOR_HPP_INCLUDED
 #define UI_VISITOR_HPP_INCLUDED
 
+#include "monostate_visitor.hpp"
+
 #include "waveform/waveform_data.hpp"
 
 namespace Ui
 {
-    struct EnableVisitor
+    struct EnableVisitor : public MonostateVisitor
     {
+        using MonostateVisitor::operator();
+
         EnableVisitor(bool isEnabled) : m_isEnabled(isEnabled) {}
 
         void operator()(Waveform::WaveformData &data) const
@@ -17,8 +21,10 @@ namespace Ui
         bool m_isEnabled{false};
     };
 
-    struct AmplitudeVisitor
+    struct AmplitudeVisitor : public MonostateVisitor
     {
+        using MonostateVisitor::operator();
+        
         AmplitudeVisitor(uint16_t amplitude) : m_amplitude(amplitude) {}
 
         template <typename T>

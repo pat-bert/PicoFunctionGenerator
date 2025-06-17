@@ -3,9 +3,14 @@
 
 #include "hal.hpp"
 
+#include "ui/ui_builder.hpp"
+
 #include "hardware/timer.h"
 
 #include "lvgl/lvgl.h"
+
+#include "FreeRTOS.h"
+#include "message_buffer.h"
 
 #include <cstdint>
 
@@ -18,6 +23,14 @@ namespace Ui
     class Task
     {
     public:
+        Task(MessageBufferHandle_t messageBufferHandle) : m_messageBufferHandle(messageBufferHandle)
+        {
+        }
+
+        /// @brief Initializes the display and sets up the LVGL environment
+        /// @details This function initializes the display driver, sets up the LVGL display and registers callbacks.
+        void init();
+
         /// @brief Function to run the UI task
         /// @details This function initializes the display, creates UI elements, and enters a loop to update the UI.
         ///          It uses LVGL for rendering the UI and handles ADC readings to display on the screen.
@@ -25,10 +38,6 @@ namespace Ui
         void run();
 
     protected:
-        /// @brief Initializes the display and sets up the LVGL environment
-        /// @details This function initializes the display driver, sets up the LVGL display and registers callbacks.
-        void init();
-
         /// @brief Callback function for rounding the display area
         /// @details This function is called by LVGL to round the display area to the nearest multiple of 8 pixels in height.
         /// It modifies the area parameter to ensure that the height is a multiple of 8, which is required for the display driver.
@@ -68,11 +77,17 @@ namespace Ui
         DisplayDriverType m_displayDriver{&m_i2cDisplay, DisplayDriverType::I2CAddr::PRIMARY, column_offset};
 
         uint8_t m_displayBuffer0[DisplayDriverType::get_buffer_size() + 8];
+
+        UiBuilder m_uiBuilder{};
+
+        MessageBufferHandle_t m_messageBufferHandle{nullptr};
     };
 
-    static void run_task_wrapper(void* arg)
+    static void run_task_wrapper(void *arg)
     {
-        Task task{};
+        MessageBufferHandle_t messageBufferHandle = static_cast<MessageBufferHandle_t>(arg);
+        Task task{messageBufferHandle};
+        task.init();
         task.run();
     }
 }

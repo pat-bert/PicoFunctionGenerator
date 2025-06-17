@@ -9,6 +9,8 @@ namespace Waveform
 {
     void Task::init()
     {
+        std::cout << "Starting Waveform Generation Task..." << std::endl;
+
         for (size_t i = 0; i < numberOfChannels; ++i)
         {
             // Initialize I2C drivers for each DAC
@@ -40,15 +42,14 @@ namespace Waveform
 
     void Task::run()
     {
-        std::cout << "Starting Waveform Generation Task..." << std::endl;
-        init();
-
         std::array<ChannelData, numberOfChannels> waveFormDataArray{
             SawtoothData{true, 1000U, 4095U, true},
             TriangleData{true, 500U, 2048U}};
 
         while (true)
         {
+            xMessageBufferReceive(m_messageBufferHandle, waveFormDataArray.data(), sizeof(waveFormDataArray), 0);
+
             for (int i = 0; i < numberOfChannels; ++i)
             {
                 std::visit(m_visitors[i], waveFormDataArray[i]);

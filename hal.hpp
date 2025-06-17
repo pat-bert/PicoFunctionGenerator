@@ -12,14 +12,14 @@ using DacDriverType = Dac::MCP4725<DacInterfaceDriverType>;
 
 constexpr uint sdaLcd{14U};
 constexpr uint sclLcd{15U};
-constexpr uint adc0{26U};
-constexpr uint adc1{27U};
+constexpr uint adcPins[]{26U, 27U};
+constexpr uint enablePins[]{2U, 3U};
 constexpr uint pioStatemachineDisplay{0U};
 
 constexpr uint8_t numberOfChannels{2U};
 constexpr uint sdaDacs[]{16U, 18U};
 constexpr uint sclDacs[]{17U, 19U};
-constexpr uint pwmPins[]{0U, 2U};
+constexpr uint pwmPins[]{0U, 1U};
 
 constexpr uint16_t i2cSpeedKHz{1000U};
 

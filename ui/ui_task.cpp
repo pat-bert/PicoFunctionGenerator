@@ -1,7 +1,10 @@
-#include "ui_task.hpp"
+#include "ui/ui_task.hpp"
+#include "waveform/waveform_data.hpp"
 
 #include "hardware/adc.h"
+#include "hardware/gpio.h"
 
+#include <array>
 #include <iostream>
 
 namespace Ui
@@ -86,35 +89,50 @@ namespace Ui
 
     void Task::run()
     {
-        std::cout << "Starting UI Task..." << std::endl;
-        init();
-
-        lv_obj_t *label0 = lv_label_create(lv_screen_active());
-        lv_obj_t *label1 = lv_label_create(lv_screen_active());
-        lv_label_set_text(label0, "ADC0:");
-        lv_label_set_text(label1, "ADC1:");
-        lv_obj_align(label0, LV_ALIGN_LEFT_MID, 0, -10);
-        lv_obj_align(label1, LV_ALIGN_LEFT_MID, 0, 10);
+        m_uiBuilder.createUi();
 
         repeating_timer_t timer{};
         // Negative value means that the period is between starts of repeated calls
         add_repeating_timer_ms(-timerPeriodMs, timer_callback, nullptr, &timer);
 
+        std::array<Waveform::ChannelData, numberOfChannels> waveFormDataArray{
+            Waveform::SawtoothData{true, 1000U, 4095U, true},
+            Waveform::TriangleData{true, 500U, 2048U}};
+
         while (true)
         {
-            adc_select_input(0);
-            uint16_t adc0Value = adc_read();
-            adc_select_input(1);
-            uint16_t adc1Value = adc_read();
-            lv_label_set_text_fmt(label0, "ADC0: %u", adc0Value);
-            lv_label_set_text_fmt(label1, "ADC1: %u", adc1Value);
-            lv_timer_handler();
+            for (int i = 0; i < numberOfChannels; ++i)
+            {
+                adc_select_input(i);
+                const uint16_t adcValue = adc_read();
+                m_uiBuilder.setAdcValue(i, adcValue);
+
+                const bool isChannelEnabled = !gpio_get(enablePins[i]);
+                m_uiBuilder.setEnabled(i, isChannelEnabled);
+
+                const auto visitor = [isChannelEnabled](auto &data)
+                {
+                    data.setEnabled(isChannelEnabled);
+                };
+
+                std::visit(visitor, waveFormDataArray[i]);
+            }
+
+            const uint32_t timeUntilNextRunMs = lv_timer_handler();
+
+            xStreamBufferSend(m_messageBufferHandle,
+                              waveFormDataArray.data(),
+                              sizeof(waveFormDataArray),
+                              portMAX_DELAY);
+
             sleep_ms(100U);
         }
     }
 
     void Task::init()
     {
+        std::cout << "Starting UI Task..." << std::endl;
+
         m_i2cDisplay.init();
 
         m_displayDriver.init();
@@ -125,8 +143,14 @@ namespace Ui
         sleep_ms(5000);
 
         adc_init();
-        adc_gpio_init(adc0);
-        adc_gpio_init(adc1);
+
+        for (int i = 0; i < numberOfChannels; ++i)
+        {
+            adc_gpio_init(adcPins[i]);
+            gpio_init(enablePins[i]);
+            gpio_set_dir(enablePins[i], GPIO_IN);
+            gpio_pull_up(enablePins[i]);
+        }
 
         lv_init();
 

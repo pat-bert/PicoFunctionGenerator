@@ -80,6 +80,11 @@ namespace Waveform
             return m_amplitude;
         }
 
+        void setAmplitude(uint16_t amplitude)
+        {
+            m_amplitude = amplitude;
+        }
+
     private:
         uint16_t m_amplitude{0U}; // Amplitude of the waveform, default 0
     };

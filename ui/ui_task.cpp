@@ -1,4 +1,7 @@
 #include "ui/ui_task.hpp"
+
+#include "ui/ui_visitor.hpp"
+
 #include "waveform/waveform_data.hpp"
 
 #include "hardware/adc.h"
@@ -110,12 +113,11 @@ namespace Ui
                 const bool isChannelEnabled = !gpio_get(enablePins[i]);
                 m_uiBuilder.setEnabled(i, isChannelEnabled);
 
-                const auto visitor = [isChannelEnabled](auto &data)
-                {
-                    data.setEnabled(isChannelEnabled);
-                };
+                const EnableVisitor enableVisitor{isChannelEnabled};
+                const AmplitudeVisitor amplitudeVisitor{adcValue};
 
-                std::visit(visitor, waveFormDataArray[i]);
+                std::visit(enableVisitor, waveFormDataArray[i]);
+                std::visit(amplitudeVisitor, waveFormDataArray[i]);
             }
 
             const uint32_t timeUntilNextRunMs = lv_timer_handler();
@@ -143,6 +145,11 @@ namespace Ui
         sleep_ms(5000);
 
         adc_init();
+
+        constexpr uint32_t adcLowRipplePin{23U};
+        gpio_init(adcLowRipplePin);
+        gpio_set_dir(adcLowRipplePin, GPIO_OUT);
+        gpio_put(adcLowRipplePin, true); // Enable low ripple mode
 
         for (int i = 0; i < numberOfChannels; ++i)
         {

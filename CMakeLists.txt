@@ -48,10 +48,11 @@ target_sources(${PROJECT_NAME} PRIVATE
     i2c/i2c_pico.hpp
     i2c/pio_i2c.c
     i2c/pio_i2c.h
-    ui/ui_task.cpp
-    ui/ui_task.hpp
     ui/ui_builder.cpp
     ui/ui_builder.hpp
+    ui/ui_task.cpp
+    ui/ui_task.hpp
+    ui/ui_visitor.hpp
     waveform/waveform_data.hpp
     waveform/waveform_task.cpp
     waveform/waveform_task.hpp

@@ -111,5 +111,6 @@
         "thread": "cpp",
         "multicore.h": "c",
         "sync.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

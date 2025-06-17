@@ -30,8 +30,8 @@ The DACs are driven in a loop by core0 while the UI is handled by core1.
 - [x] Update display via PIO based separate I²C to not interfere with tight DAC loops
 - [x] Make DAC waveform non-blocking
 - [ ] Create mock-up UI to show current waveform, frequency and enabled for each channel
-- [ ] Add enable buttons for each channel
-- [ ] Connect UI to actual channel data
+- [x] Add enable buttons for each channel
+- [x] Connect UI to actual channel data
 - [ ] Add inputs to change waveform and frequency
 
 ## How to build the software
@@ -45,15 +45,19 @@ The target hardware is the [Raspberry Pi Pico](https://www.raspberrypi.com/produ
 The GPIO pins of the **Raspberry Pico** are connected as follows:
 
 GPIO-Pin-Number|Function
----|--------
-0  | Fast PWM Output Channel 0
-2  | Fast PWM Output Channel 1
-14 | I²C data for LCD
-15 | I²C clock for LCD
-16 | I²C data for DAC Channel 0
-17 | I²C clock for DAC Channel 0
-18 | I²C data for DAC Channel 1
-19 | I²C clock for DAC Channel 1
+---------------|-------------------------------
+0              | Fast PWM Output channel 0
+1              | Fast PWM Output channel 1
+2              | Enable input channel 0
+3              | Enable input channel 1
+14             | I²C data for LCD
+15             | I²C clock for LCD
+16             | I²C data for DAC channel 0
+17             | I²C clock for DAC channel 0
+18             | I²C data for DAC channel 1
+19             | I²C clock for DAC channel 1
+26             | ADC input ammplitude channel 0
+27             | ADC input ammplitude channel 1
 
 ## Waveform output
 

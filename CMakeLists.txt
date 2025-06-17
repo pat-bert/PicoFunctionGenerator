@@ -86,3 +86,31 @@ pico_enable_stdio_uart(${PROJECT_NAME} 0)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${PROJECT_NAME})
+
+FetchContent_Declare(freertos_kernel
+    GIT_REPOSITORY https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+    GIT_TAG V11.2.0 #Note: Best practice to use specific git-hash or tagged version
+)
+
+add_library(freertos_config INTERFACE)
+
+target_include_directories(freertos_config SYSTEM
+    INTERFACE
+    include
+)
+
+target_compile_definitions(freertos_config
+    INTERFACE
+    projCOVERAGE_TEST=0
+)
+
+set(FREERTOS_HEAP "4" CACHE STRING "" FORCE)
+# Select the cross-compile PORT
+if(CMAKE_CROSSCOMPILING)
+    set(FREERTOS_PORT "GCC_RP2040" CACHE STRING "" FORCE)
+endif()
+
+FetchContent_MakeAvailable(freertos_kernel)
+
+# Add the FreeRTOS kernel and configuration
+target_link_libraries(${PROJECT_NAME} freertos_kernel)

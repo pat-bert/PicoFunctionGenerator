@@ -2,6 +2,8 @@
 
 #include "hardware/adc.h"
 
+#include <iostream>
+
 namespace Ui
 {
     constexpr uint32_t timerPeriodMs{20U};
@@ -84,6 +86,7 @@ namespace Ui
 
     void Task::run()
     {
+        std::cout << "Starting UI Task..." << std::endl;
         init();
 
         lv_obj_t *label0 = lv_label_create(lv_screen_active());

@@ -2,11 +2,18 @@
 #include "tasks/ui_task.hpp"
 #include "waveform/waveform_task.hpp"
 
-// Pico SDK includes
-#include "pico/multicore.h"
+// Third-party includes
+#include "FreeRTOS.h"
+#include "task.h"
 
 // Std C++ includes
 #include <iostream>
+
+#define WAVEFORM_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
+#define UI_TASK_STACK_SIZE 5000
+
+#define WAVEFORM_TASK_PRIORITY (tskIDLE_PRIORITY + 2UL)
+#define UI_TASK_PRIORITY (tskIDLE_PRIORITY + 2UL)
 
 int main()
 {
@@ -14,7 +21,24 @@ int main()
     sleep_ms(2000); // wait for USB serial to be ready
 
     std::cout << "Starting Pico Waveform Generator..." << std::endl;
-    multicore_launch_core1(Ui::run_task_wrapper);
 
-    Waveform::run_task_wrapper();
+    TaskHandle_t waveFormTaskHandle = NULL;
+    if (xTaskCreate(Waveform::run_task_wrapper, "WaveformThread", WAVEFORM_TASK_STACK_SIZE, NULL, WAVEFORM_TASK_PRIORITY, &waveFormTaskHandle) != pdPASS)
+    {
+        std::cerr << "Failed to create WaveformThread task!" << std::endl;
+        return -1; // Exit or handle the error
+    }
+
+    vTaskCoreAffinitySet(waveFormTaskHandle, 1 << 0);
+
+    TaskHandle_t uiTaskHandle = NULL;
+    if (xTaskCreate(Ui::run_task_wrapper, "UiThread", UI_TASK_STACK_SIZE, NULL, UI_TASK_PRIORITY, &uiTaskHandle) != pdPASS)
+    {
+        std::cerr << "Failed to create UiThread task!" << std::endl;
+        return -1; // Exit or handle the error
+    }
+
+    vTaskCoreAffinitySet(uiTaskHandle, 1 << 1);
+
+    vTaskStartScheduler(); // Should never return, but in case it does, we can handle it gracefully.
 }

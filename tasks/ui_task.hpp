@@ -70,7 +70,7 @@ namespace Ui
         uint8_t m_displayBuffer0[DisplayDriverType::get_buffer_size() + 8];
     };
 
-    static void run_task_wrapper()
+    static void run_task_wrapper(void* arg)
     {
         Task task{};
         task.run();

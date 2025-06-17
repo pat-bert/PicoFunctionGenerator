@@ -31,7 +31,7 @@ namespace Waveform
         std::array<WaveformVisitor, numberOfChannels> m_visitors{};
     };
 
-    static void run_task_wrapper()
+    static void run_task_wrapper(void *arg)
     {
         Task task{};
         task.run();

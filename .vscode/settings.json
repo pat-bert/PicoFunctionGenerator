@@ -94,6 +94,22 @@
         "cfenv": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "inttypes.h": "c",
+        "i2c.h": "c",
+        "ratio": "cpp",
+        "regex": "cpp",
+        "stdio.h": "c",
+        "list": "cpp",
+        "i2c.pio.h": "c",
+        "pio_i2c.h": "c",
+        "bitset": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp",
+        "multicore.h": "c",
+        "sync.h": "c"
     }
 }

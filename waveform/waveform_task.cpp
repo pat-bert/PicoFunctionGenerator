@@ -40,6 +40,7 @@ namespace Waveform
 
     void Task::run()
     {
+        std::cout << "Starting Waveform Generation Task..." << std::endl;
         init();
 
         std::array<ChannelData, numberOfChannels> waveFormDataArray{

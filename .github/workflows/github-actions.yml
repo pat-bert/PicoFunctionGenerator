@@ -1,0 +1,24 @@
+name: Raspberry Pico Build
+run-name: Build RP2040 Project
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: build
+      id: build
+      uses: samyarsadat/Pico-Build-Action@v1
+      with:
+        source_dir: .
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+          name: workspace_artifacts
+          path: ${{steps.build.outputs.output_dir}}

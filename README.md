@@ -29,10 +29,11 @@ The DACs are driven in a loop by core0 while the UI is handled by core1.
 - [x] Integrated suitable library for SH1106 monochrome 1.3" display via I²C using i2c1
 - [x] Update display via PIO based separate I²C to not interfere with tight DAC loops
 - [x] Make DAC waveform non-blocking
-- [ ] Create mock-up UI to show current waveform, frequency and enabled for each channel
+- [x] Create mock-up UI to show current waveform, frequency and enabled for each channel
 - [x] Add enable buttons for each channel
 - [x] Connect UI to actual channel data
-- [ ] Add inputs to change waveform and frequency
+- [ ] Add encoder support to navigate fields
+- [ ] Click encoder to switch to edit mode and change values
 
 ## How to build the software
 

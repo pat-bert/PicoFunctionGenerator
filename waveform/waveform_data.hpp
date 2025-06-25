@@ -55,6 +55,11 @@ namespace Waveform
             return m_dutyCycle;
         }
 
+        const char* getWaveformType() const
+        {
+            return "Rect";
+        }
+
     private:
         uint32_t m_frequency{1000U}; // Frequency in Hz, default 1kHz
         uint32_t m_dutyCycle{50U};   // Duty cycle in percent, default 50%
@@ -102,6 +107,11 @@ namespace Waveform
             // Return the constant amplitude value
             return getAmplitude();
         }
+
+        const char* getWaveformType() const
+        {
+            return "Const";
+        }
     };
 
     class SawtoothData : public AnalogWaveformData<SawtoothData>
@@ -136,6 +146,11 @@ namespace Waveform
             }
 
             return m_counter;
+        }
+
+        const char* getWaveformType() const
+        {
+            return "Saw";
         }
 
     private:
@@ -183,6 +198,11 @@ namespace Waveform
             return m_counter;
         }
 
+        const char* getWaveformType() const
+        {
+            return "Tri";
+        }
+
     private:
         uint16_t m_step;
         uint32_t m_frequency{1000U}; // Frequency in Hz, default 1kHz
@@ -210,6 +230,11 @@ namespace Waveform
                 m_counter -= 360; // Wrap around angle
             }
             return static_cast<uint16_t>(getAmplitude() * (1.0 + sinf(static_cast<float>(m_counter) * static_cast<float>(M_PI) / 180.0))); // Sine wave formula
+        }
+
+        const char* getWaveformType() const
+        {
+            return "Sine";
         }
 
     private:

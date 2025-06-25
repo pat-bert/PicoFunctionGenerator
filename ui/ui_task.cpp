@@ -108,7 +108,7 @@ namespace Ui
             {
                 adc_select_input(i);
                 const uint16_t adcValue = adc_read();
-                m_uiBuilder.setAdcValue(i, adcValue);
+                m_uiBuilder.setAmplitude(i, adcValue);
 
                 const bool isChannelEnabled = !gpio_get(enablePins[i]);
                 m_uiBuilder.setEnabled(i, isChannelEnabled);
@@ -175,5 +175,13 @@ namespace Ui
         lv_display_set_buffers(display, &m_displayBuffer0, nullptr, sizeof(m_displayBuffer0), LV_DISPLAY_RENDER_MODE_FULL);
         lv_display_set_flush_cb(display, flush_cb);
         lv_display_add_event_cb(display, rounder_cb, LV_EVENT_INVALIDATE_AREA, display);
+
+        lv_indev_t* indev = lv_indev_create();
+        lv_indev_set_type(indev, LV_INDEV_TYPE_ENCODER);
+        lv_indev_set_read_cb(indev, [](lv_indev_t *indev, lv_indev_data_t *data) {
+            // Handle encoder input here
+            data->state = LV_INDEV_STATE_REL; // Example: set state to released
+            data->enc_diff = 0; // Example: no change in encoder position
+        });
     }
 }
